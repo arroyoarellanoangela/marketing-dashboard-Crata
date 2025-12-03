@@ -525,32 +525,30 @@ def main():
                 # =====================
                 st.markdown("### Comparación Período Actual vs Anterior")
                 
-                # Pre-calcular métricas derivadas en el DataFrame (porcentajes para consistencia con KPIs)
-                # % Sesiones >60s = (engagedSessions / sessions) * 100
-                if 'engagedSessions' in df_full.columns and 'sessions' in df_full.columns:
-                    df_full['pct_sesiones_60s'] = (df_full['engagedSessions'] / df_full['sessions'] * 100).fillna(0)
+                # Pre-calcular métricas derivadas en el DataFrame (números enteros)
+                # engagedSessions ya existe como número entero
                 
-                # % Scroll profundo = (1 - bounceRate) * 100
-                if 'bounceRate' in df_full.columns:
-                    df_full['pct_scroll_profundo'] = ((1 - df_full['bounceRate']) * 100).clip(lower=0)
+                # Sesiones sin rebote = sessions * (1 - bounceRate)
+                if 'bounceRate' in df_full.columns and 'sessions' in df_full.columns:
+                    df_full['sesiones_no_rebote'] = (df_full['sessions'] * (1 - df_full['bounceRate'])).fillna(0).round()
                 
-                # % Usuarios recurrentes = ((totalUsers - newUsers) / totalUsers) * 100
+                # Usuarios recurrentes = totalUsers - newUsers
                 if 'newUsers' in df_full.columns and 'totalUsers' in df_full.columns:
-                    df_full['pct_recurrentes'] = ((df_full['totalUsers'] - df_full['newUsers']) / df_full['totalUsers'] * 100).fillna(0)
+                    df_full['usuarios_recurrentes'] = (df_full['totalUsers'] - df_full['newUsers']).clip(lower=0)
                 
                 if 'engagementRate' in df_full.columns:
                     # engagementRate viene como decimal (0.xx), convertir a porcentaje
                     df_full['engagement_rate_pct'] = df_full['engagementRate'] * 100
                 
-                # Selector de KPI - Las 7 KPIs de los cuadros (porcentajes para consistencia)
+                # Selector de KPI - Las 7 KPIs de los cuadros (números enteros)
                 kpi_options = {
                     "Sesiones Totales": {"col": "sessions", "format": "number", "suffix": ""},
                     "Usuarios Únicos": {"col": "totalUsers", "format": "number", "suffix": ""},
                     "Tiempo Medio/Sesión": {"col": "averageSessionDuration", "format": "duration", "suffix": ""},
                     "Engagement Rate": {"col": "engagement_rate_pct", "format": "percent", "suffix": ""},
-                    "% Sesiones >60s": {"col": "pct_sesiones_60s", "format": "percent", "suffix": ""},
-                    "% Scroll Profundo": {"col": "pct_scroll_profundo", "format": "percent", "suffix": ""},
-                    "% Recurrentes": {"col": "pct_recurrentes", "format": "percent", "suffix": ""},
+                    "Sesiones Engaged": {"col": "engagedSessions", "format": "number", "suffix": ""},
+                    "Sesiones Sin Rebote": {"col": "sesiones_no_rebote", "format": "number", "suffix": ""},
+                    "Usuarios Recurrentes": {"col": "usuarios_recurrentes", "format": "number", "suffix": ""},
                 }
                 
                 # Filtrar solo las KPIs disponibles en los datos
