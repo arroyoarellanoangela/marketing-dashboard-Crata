@@ -150,6 +150,9 @@ def create_executive_kpis(analytics_data, fecha_inicio=None, fecha_fin=None):
     pct_engaged = (engaged_sessions / total_sessions * 100) if total_sessions > 0 else 0
     returning_users = total_users - new_users
     pct_returning = (returning_users / total_users * 100) if total_users > 0 else 0
+    # Páginas por sesión
+    screen_page_views = int(df['screenPageViews'].sum()) if 'screenPageViews' in df.columns else 0
+    pages_per_session = (screen_page_views / total_sessions) if total_sessions > 0 else 0
     
     # =====================
     # Calcular métricas del período ANTERIOR (para deltas)
@@ -164,6 +167,9 @@ def create_executive_kpis(analytics_data, fecha_inicio=None, fecha_fin=None):
     prev_pct_engaged = (prev_engaged_sessions / prev_sessions * 100) if prev_sessions > 0 else 0
     prev_returning = prev_users - prev_new_users
     prev_pct_returning = (prev_returning / prev_users * 100) if prev_users > 0 else 0
+    # Páginas por sesión anterior
+    prev_screen_page_views = int(df_prev['screenPageViews'].sum()) if 'screenPageViews' in df_prev.columns and len(df_prev) > 0 else 0
+    prev_pages_per_session = (prev_screen_page_views / prev_sessions) if prev_sessions > 0 else 0
     
     # =====================
     # Calcular DELTAS
@@ -173,7 +179,7 @@ def create_executive_kpis(analytics_data, fecha_inicio=None, fecha_fin=None):
     delta_duration = calculate_delta(avg_session_duration, prev_avg_duration)
     delta_engagement = calculate_delta(engagement_rate, prev_engagement_rate) if prev_engagement_rate > 0 else None
     delta_pct_engaged = calculate_delta(pct_engaged, prev_pct_engaged) if prev_pct_engaged > 0 else None
-    delta_deep_scroll = calculate_delta(100 - bounce_rate, 100 - prev_bounce_rate) if (100 - prev_bounce_rate) > 0 else None
+    delta_pages_per_session = calculate_delta(pages_per_session, prev_pages_per_session) if prev_pages_per_session > 0 else None
     delta_returning = calculate_delta(pct_returning, prev_pct_returning) if prev_pct_returning > 0 else None
     
     # Formato tiempo
@@ -218,8 +224,6 @@ def create_executive_kpis(analytics_data, fecha_inicio=None, fecha_fin=None):
     else:
         growth_str = "N/A"
     
-    # Variables para % scroll profundo
-    deep_scroll_pct = 100 - bounce_rate
     
     # =====================
     # FILA 1: 3 KPIs principales
@@ -288,11 +292,11 @@ def create_executive_kpis(analytics_data, fecha_inicio=None, fecha_fin=None):
     
     with col4:
         st.markdown(render_kpi_card(
-            title="% Scroll Profundo",
-            value=f"{deep_scroll_pct:.1f}%",
-            subtitle="No rebotaron",
-            icon="📜",
-            delta=delta_deep_scroll
+            title="Páginas/Sesión",
+            value=f"{pages_per_session:.2f}",
+            subtitle="Profundidad de navegación",
+            icon="📄",
+            delta=delta_pages_per_session
         ), unsafe_allow_html=True)
     
     with col5:
@@ -528,10 +532,6 @@ def main():
                 # Pre-calcular métricas derivadas en el DataFrame (números enteros)
                 # engagedSessions ya existe como número entero
                 
-                # Sesiones sin rebote = sessions * (1 - bounceRate)
-                if 'bounceRate' in df_full.columns and 'sessions' in df_full.columns:
-                    df_full['sesiones_no_rebote'] = (df_full['sessions'] * (1 - df_full['bounceRate'])).fillna(0).round()
-                
                 # Usuarios recurrentes = totalUsers - newUsers
                 if 'newUsers' in df_full.columns and 'totalUsers' in df_full.columns:
                     df_full['usuarios_recurrentes'] = (df_full['totalUsers'] - df_full['newUsers']).clip(lower=0)
@@ -540,14 +540,18 @@ def main():
                     # engagementRate viene como decimal (0.xx), convertir a porcentaje
                     df_full['engagement_rate_pct'] = df_full['engagementRate'] * 100
                 
-                # Selector de KPI - Las 7 KPIs de los cuadros (números enteros)
+                # Páginas por sesión (profundidad de navegación / scroll medio)
+                if 'screenPageViews' in df_full.columns and 'sessions' in df_full.columns:
+                    df_full['paginas_por_sesion'] = (df_full['screenPageViews'] / df_full['sessions']).fillna(0)
+                
+                # Selector de KPI - Las 7 KPIs principales
                 kpi_options = {
                     "Sesiones Totales": {"col": "sessions", "format": "number", "suffix": ""},
                     "Usuarios Únicos": {"col": "totalUsers", "format": "number", "suffix": ""},
                     "Tiempo Medio/Sesión": {"col": "averageSessionDuration", "format": "duration", "suffix": ""},
                     "Engagement Rate": {"col": "engagement_rate_pct", "format": "percent", "suffix": ""},
                     "Sesiones Engaged": {"col": "engagedSessions", "format": "number", "suffix": ""},
-                    "Sesiones Sin Rebote": {"col": "sesiones_no_rebote", "format": "number", "suffix": ""},
+                    "Páginas por Sesión": {"col": "paginas_por_sesion", "format": "decimal", "suffix": ""},
                     "Usuarios Recurrentes": {"col": "usuarios_recurrentes", "format": "number", "suffix": ""},
                 }
                 
@@ -661,15 +665,36 @@ def main():
                         
                         kpi_format = selected_kpi_config["format"]
                         
-                        # Para métricas de promedio/porcentaje, usar mean
-                        if kpi_format in ["percent", "duration"]:
+                        # Para métricas de promedio/porcentaje/decimal, usar mean
+                        if kpi_format in ["percent", "duration", "decimal"]:
                             current_total = df_current[selected_kpi].mean()
                             prev_total = df_prev[selected_kpi].mean()
                         else:
                             current_total = df_current[selected_kpi].sum()
                             prev_total = df_prev[selected_kpi].sum()
                         
-                        change_pct = ((current_total - prev_total) / prev_total * 100) if prev_total > 0 else 0
+                        # Calcular variación: para métricas derivadas, usar porcentajes
+                        # para que coincida con los deltas de los KPIs
+                        if selected_kpi == "usuarios_recurrentes":
+                            # % Recurrentes = (totalUsers - newUsers) / totalUsers * 100
+                            curr_users = df_current['totalUsers'].sum()
+                            curr_new = df_current['newUsers'].sum()
+                            prev_users = df_prev['totalUsers'].sum()
+                            prev_new = df_prev['newUsers'].sum()
+                            pct_curr = ((curr_users - curr_new) / curr_users * 100) if curr_users > 0 else 0
+                            pct_prev = ((prev_users - prev_new) / prev_users * 100) if prev_users > 0 else 0
+                            change_pct = ((pct_curr - pct_prev) / pct_prev * 100) if pct_prev > 0 else 0
+                        elif selected_kpi == "engagedSessions":
+                            # % Sesiones >60s = engagedSessions / sessions * 100
+                            curr_engaged = df_current['engagedSessions'].sum()
+                            curr_sessions = df_current['sessions'].sum()
+                            prev_engaged = df_prev['engagedSessions'].sum()
+                            prev_sessions = df_prev['sessions'].sum()
+                            pct_curr = (curr_engaged / curr_sessions * 100) if curr_sessions > 0 else 0
+                            pct_prev = (prev_engaged / prev_sessions * 100) if prev_sessions > 0 else 0
+                            change_pct = ((pct_curr - pct_prev) / pct_prev * 100) if pct_prev > 0 else 0
+                        else:
+                            change_pct = ((current_total - prev_total) / prev_total * 100) if prev_total > 0 else 0
                         
                         # Función para formatear valores según el tipo de KPI
                         def format_kpi_value(value, fmt):
@@ -677,6 +702,8 @@ def main():
                                 return f"{int(value//60)}m {int(value%60)}s"
                             elif fmt == "percent":
                                 return f"{value:.1f}%"
+                            elif fmt == "decimal":
+                                return f"{value:.2f}"
                             else:
                                 return f"{int(value):,}"
                         
