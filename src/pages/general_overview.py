@@ -525,14 +525,16 @@ def main():
                 # =====================
                 st.markdown("### Comparación Período Actual vs Anterior")
                 
-                # Pre-calcular métricas derivadas en el DataFrame
+                # Pre-calcular métricas derivadas en el DataFrame (porcentajes para consistencia con KPIs)
+                # % Sesiones >60s = (engagedSessions / sessions) * 100
                 if 'engagedSessions' in df_full.columns and 'sessions' in df_full.columns:
-                    df_full['pct_sessions_60s'] = (df_full['engagedSessions'] / df_full['sessions'] * 100).fillna(0)
+                    df_full['pct_sesiones_60s'] = (df_full['engagedSessions'] / df_full['sessions'] * 100).fillna(0)
                 
+                # % Scroll profundo = (1 - bounceRate) * 100
                 if 'bounceRate' in df_full.columns:
-                    # bounceRate viene como decimal (0.xx), convertir a porcentaje
                     df_full['pct_scroll_profundo'] = ((1 - df_full['bounceRate']) * 100).clip(lower=0)
                 
+                # % Usuarios recurrentes = ((totalUsers - newUsers) / totalUsers) * 100
                 if 'newUsers' in df_full.columns and 'totalUsers' in df_full.columns:
                     df_full['pct_recurrentes'] = ((df_full['totalUsers'] - df_full['newUsers']) / df_full['totalUsers'] * 100).fillna(0)
                 
@@ -540,32 +542,19 @@ def main():
                     # engagementRate viene como decimal (0.xx), convertir a porcentaje
                     df_full['engagement_rate_pct'] = df_full['engagementRate'] * 100
                 
-                # DEBUG: Ver valores calculados
-                with st.expander("🔍 DEBUG: Valores calculados", expanded=False):
-                    calc_cols = ['pct_sessions_60s', 'pct_scroll_profundo', 'pct_recurrentes', 'engagement_rate_pct']
-                    for col in calc_cols:
-                        if col in df_full.columns:
-                            st.write(f"**{col}**: min={df_full[col].min():.2f}, max={df_full[col].max():.2f}, mean={df_full[col].mean():.2f}")
-                        else:
-                            st.write(f"**{col}**: NO SE CALCULÓ")
-                
-                # Selector de KPI - Las 8 KPIs de los cuadros
+                # Selector de KPI - Las 7 KPIs de los cuadros (porcentajes para consistencia)
                 kpi_options = {
                     "Sesiones Totales": {"col": "sessions", "format": "number", "suffix": ""},
                     "Usuarios Únicos": {"col": "totalUsers", "format": "number", "suffix": ""},
                     "Tiempo Medio/Sesión": {"col": "averageSessionDuration", "format": "duration", "suffix": ""},
-                    "Engagement Rate": {"col": "engagement_rate_pct", "format": "percent", "suffix": "%"},
-                    "% Sesiones >60s": {"col": "pct_sessions_60s", "format": "percent", "suffix": "%"},
-                    "% Scroll Profundo": {"col": "pct_scroll_profundo", "format": "percent", "suffix": "%"},
-                    "% Recurrentes": {"col": "pct_recurrentes", "format": "percent", "suffix": "%"},
+                    "Engagement Rate": {"col": "engagement_rate_pct", "format": "percent", "suffix": ""},
+                    "% Sesiones >60s": {"col": "pct_sesiones_60s", "format": "percent", "suffix": ""},
+                    "% Scroll Profundo": {"col": "pct_scroll_profundo", "format": "percent", "suffix": ""},
+                    "% Recurrentes": {"col": "pct_recurrentes", "format": "percent", "suffix": ""},
                 }
                 
                 # Filtrar solo las KPIs disponibles en los datos
                 available_kpis = {k: v for k, v in kpi_options.items() if v["col"] in df_full.columns}
-                
-                # DEBUG: Ver qué KPIs están disponibles
-                st.write(f"**DEBUG disponibles**: {list(available_kpis.keys())}")
-                st.write(f"**DEBUG columnas df_full**: {list(df_full.columns)}")
                 
                 selected_kpi_name = st.selectbox(
                     "Selecciona la métrica a comparar:",
@@ -596,13 +585,6 @@ def main():
                     # Shiftear las fechas del período anterior para alinear con el actual
                     if not df_prev.empty:
                         df_prev['date_shifted'] = df_prev['date'] + pd.Timedelta(days=period_days)
-                    
-                    # DEBUG: Verificar columna seleccionada
-                    st.write(f"**DEBUG**: selected_kpi = `{selected_kpi}`")
-                    st.write(f"**DEBUG**: Columna en df_current? {selected_kpi in df_current.columns}")
-                    st.write(f"**DEBUG**: Columna en df_prev? {selected_kpi in df_prev.columns}")
-                    if selected_kpi in df_current.columns:
-                        st.write(f"**DEBUG**: df_current[{selected_kpi}] = {df_current[selected_kpi].tolist()}")
                     
                     # Crear gráfico
                     fig_comparison = go.Figure()
