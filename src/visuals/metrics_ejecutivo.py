@@ -1,6 +1,7 @@
 """
 Módulo de métricas ejecutivas para el Executive Dashboard
 Contiene todas las funciones para KPIs, gráficos y análisis ejecutivo
+Integrado con el Design System Crata AI
 """
 
 import streamlit as st
@@ -11,6 +12,7 @@ from plotly.subplots import make_subplots
 import numpy as np
 from datetime import datetime, timedelta
 from src.components.sidebar import aplicar_filtros_fecha
+from src.config.theme import COLORS as CRATA_COLORS
 
 # ============================================================================
 # CONFIGURACIÓN Y CONSTANTES
@@ -22,16 +24,19 @@ LEAD_EVENTS = {'form_submit', 'hubspot_form_submit', 'form_start', 'form_bookame
 # Eventos definidos como MEETINGS (actualizados según datos reales)
 MEETING_EVENTS = {'form_bookameeting', 'cta_bookameeting'}
 
-# Colores del tema Crata AI
+# Colores del tema Crata AI - Mapeados desde el Design System central
 COLORS = {
-    'primary': '#1E90FF',
-    'seo': '#28a745',
+    'primary': CRATA_COLORS['chart_primary'],     # Teal Crata
+    'secondary': CRATA_COLORS['chart_secondary'], # Amarillo Crata
+    'seo': CRATA_COLORS['success'],               # Verde
     'linkedin': '#0077b5', 
-    'email': '#ff6b35',
+    'email': CRATA_COLORS['warning'],             # Naranja
     'eventos': '#6f42c1',
-    'paid': '#dc3545',
-    'organic': '#20c997',
-    'social': '#17a2b8'
+    'paid': CRATA_COLORS['error'],                # Rojo
+    'organic': CRATA_COLORS['chart_tertiary'],    # Teal claro
+    'social': CRATA_COLORS['info'],               # Azul
+    'background': CRATA_COLORS['background_primary'],
+    'text': CRATA_COLORS['text_primary'],
 }
 
 # ============================================================================

@@ -1,0 +1,719 @@
+------------------------------------------------------------
+CRATA AI — DASHBOARD DE MARKETING
+DOCUMENTO DE REFERENCIA PARA DESARROLLO (CURSOR)
+------------------------------------------------------------
+
+Fuente: Documento “Dashboard Planning” (32 páginas) + Design System Crata AI extendido.
+Este documento sirve como manual de producto + especificación técnica + guía de diseño para el desarrollo del dashboard en Streamlit.
+
+============================================================
+1. CONTEXTO Y OBJETIVOS ESTRATÉGICOS
+============================================================
+
+Crata AI ha alcanzado un punto donde el crecimiento está cerca de la “erupción”, pero no explota debido a tres problemas críticos:
+
+Problema 1 — Datos dispersos
+
+La información está repartida entre:
+
+Google Analytics 4
+
+LinkedIn
+
+Email Marketing
+
+HubSpot / CRM
+
+Eventos
+
+No existe una visión centralizada.
+
+Problema 2 — Falta de claridad en canales
+
+Dificultad para identificar:
+
+Qué canales generan demanda cualificada
+
+Qué pasos del embudo están bloqueando el crecimiento
+
+Qué contenidos generan intención real
+
+Problema 3 — Pipeline débil
+
+Interés alto pero cualificación baja
+
+Poca visibilidad end-to-end
+
+Tiempos largos de activación
+
+🔥 Necesidad
+
+Construir una única fuente de verdad para tráfico, contenido y negocio.
+
+Estandarizar tracking (eventos GA4, UTMs, exclusiones).
+
+Exponer señales críticas del embudo en tiempo real.
+
+Comparar canales bajo un mismo modelo homogéneo.
+
+Identificar fricción, calidad, intención y oportunidades reales.
+
+🎯 Objetivos del Dashboard
+
+Crear un sistema de inteligencia de crecimiento escalable.
+
+Integrar visibilidad, engagement, contenido y demanda.
+
+Aumentar la velocidad, precisión y calidad de decisiones.
+
+Establecer la base analítica para el crecimiento 2026.
+
+============================================================
+2. DISEÑO GLOBAL DEL DASHBOARD Y VISTAS
+============================================================
+
+El dashboard contiene 4 vistas principales, todas coherentes con el Design System Crata.
+
+2.1 Vistas del Dashboard
+1) Vista Ejecutiva
+
+Dirigido a CEO / Dirección.
+Objetivo: dar una visión global del negocio digital.
+
+Incluye:
+
+Tráfico general
+
+Leads generados
+
+Reuniones agendadas
+
+Conversión del embudo
+
+Top canales
+
+Señales de intención
+
+2) Vista Marketing / Operaciones
+
+Dirigido a Marketing / Growth.
+Objetivo: optimizar semanalmente los canales.
+
+Incluye:
+
+SEO: tráfico orgánico, engagement, conversiones
+
+LinkedIn: impresiones, CTR, engagement
+
+Email marketing: aperturas, clics, conversiones
+
+Eventos: impacto post-evento
+
+Calidad del tráfico
+
+Fricciones del embudo digital
+
+3) Vista de Contenidos
+
+Dirigido a SEO, Content y Growth.
+
+Objetivo: identificar el contenido que realmente impulsa crecimiento.
+
+Incluye:
+
+Nuevos usuarios por contenido
+
+Tiempo en página >60s
+
+Scroll depth >75%
+
+High-Intent Sessions
+
+Conversiones por contenido
+
+Gap Pages (alto tráfico, baja conversión)
+
+Hidden Gems (bajo tráfico, alta intención)
+
+4) Vista Leads & Activación
+
+Dirigido a Marketing + Ventas.
+
+Incluye:
+
+Leads por canal
+
+% cualificados
+
+Reuniones
+
+Ratio Lead → Meeting
+
+Embudo completo
+
+Calidad por canal
+
+Señales de intención
+
+============================================================
+2.2 DISEÑO VISUAL — DESIGN SYSTEM CRATA AI (AMPLIADO)
+============================================================
+
+Este apartado define el estilo oficial para todo el dashboard.
+
+🎨 PALETA DE COLORES (CRATA CORE)
+Fondo principal
+
+Negro volcán: #0A0A0A
+→ Fondo de toda la app.
+
+Tarjetas y superficies
+
+Gris grafito: #1A1A1A
+→ Para tarjetas KPI y contenedores.
+
+Texto
+
+Blanco puro: #FFFFFF (títulos)
+
+Blanco suave: #CCCCCC (cuerpo)
+
+Gris claro: #BDBDBD (labels, subtítulos)
+
+Gris tenue: #999999 (auxiliares)
+
+Acentos corporativos
+
+Teal Inteligente (Crata)
+
+Hex: #A7C9C6
+
+Uso: SEO, engagement, información neutra.
+
+Amarillo Crata (KPIs críticos)
+
+Hex: #E7B400
+
+Uso: Conversiones, CTA, highlights.
+
+🔤 TIPOGRAFÍA — SISTEMA COMPLETO
+Familias
+
+Primaria: Montserrat (Bold / ExtraBold / Regular)
+
+Secundaria: Poppins (Medium / Regular)
+
+Alternativas (si Streamlit no permite):
+
+Inter
+
+Roboto
+
+Source Sans
+
+Escalas tipográficas
+Nivel	Tamaño	Peso	Uso
+H1	40–42px	800	Título de página
+H2	28–32px	700	Subtítulos
+H3	22–26px	600	Secciones
+KPI Number XL	44–52px	700	Métrica principal
+KPI Number L	32–36px	700	Métrica secundaria
+KPI Label	14–16px	400	Nombre del KPI
+Body	14–16px	400	Texto general
+Mini / Caption	11–13px	300	Datos auxiliares
+🧱 ESPACIADO Y GRID GENERAL
+Margen general
+
+32–48px alrededor de cada sección.
+
+Tarjetas
+
+Padding interno: 24px
+
+Espacio entre tarjetas: 20–28px
+
+Grid recomendado
+
+KPIs: 3 columnas
+
+Gráficos: 2 columnas
+
+Funnels: 1 columna full-width
+
+🎛️ COMPONENTES UI
+Tarjetas KPI
+background: #1A1A1A;
+border-radius: 18px;
+padding: 24px 28px;
+color: #FFFFFF;
+box-shadow: 0px 0px 14px rgba(255,255,255,0.03);
+
+Botón principal (destacado)
+background: #E7B400;
+color: #0A0A0A;
+border-radius: 10px;
+padding: 10px 24px;
+font-weight: 600;
+
+Botón secundario
+background: transparent;
+color: #A7C9C6;
+border: 1px solid rgba(167,201,198,0.4);
+
+📊 ESTILO DE GRÁFICOS (PLOTLY)
+Colores por defecto
+
+Línea principal: Teal #A7C9C6
+
+Línea comparativa: Amarillo #E7B400
+
+Barras: Teal
+
+Scatter: Teal claro
+
+Pastel/Donut: tonos Crata
+
+Fondos
+plot_bgcolor='#0A0A0A'
+paper_bgcolor='#0A0A0A'
+
+Ejes
+
+Color: #AAAAAA
+
+Grid suave: rgba(255,255,255,0.04)
+
+============================================================
+3. CONFIGURACIÓN ANALÍTICA
+============================================================
+🔍 GA4 — Datos disponibles
+
+Sesiones
+
+Usuarios
+
+Tiempo medio
+
+Scroll
+
+CTA clicks
+
+Form submits
+
+Calendly clicks
+
+Descargas
+
+Eventos configurados
+
+cta_click
+
+form_submit
+
+calendly_click
+
+file_download
+
+scroll
+
+🧭 UTMs — Normalización
+
+UTMs estándar para:
+
+LinkedIn
+
+Email
+
+Eventos
+
+Campañas de pago
+
+Partners / referrals
+
+Parámetros:
+
+utm_source
+
+utm_medium
+
+utm_campaign
+
+utm_content
+
+utm_term
+
+🔗 Integraciones externas
+
+LinkedIn API
+
+HubSpot API
+
+Apollo
+
+Email marketing (Mailchimp / Sendgrid)
+
+Export manual de apoyo
+
+============================================================
+4. ARQUITECTURA TÉCNICA
+============================================================
+
+Organización recomendada del proyecto:
+
+/src
+   /config
+   /helpers
+   /utils
+   /pages
+   /assets
+app.py
+requirements.txt
+credentials.json
+
+Capas del sistema
+1. Capa de extracción (helpers)
+
+Funciones que llaman a:
+
+GA4 API
+
+LinkedIn API
+
+Email platform
+
+CRM
+
+Eventos
+
+2. Capa de procesado
+
+Incluye:
+
+Transformación
+
+Agregaciones
+
+Validaciones
+
+Cálculo de KPIs
+
+3. Capa visual (UI + Plotly)
+
+Gráficos
+
+Tarjetas KPI
+
+Componentes de funnel
+
+Botones y filtros
+
+4. Interfaz (Streamlit)
+
+Navegación multi-página
+
+Tema dark Crata
+
+Filtros, fechas, selectores
+
+Descarga CSV
+
+============================================================
+5. DETALLE COMPLETO DE CADA VISTA
+============================================================
+
+A partir de aquí se describen en profundidad todos los módulos.
+
+--------------------------------------------
+🔵 VISTA EJECUTIVA — DETALLE COMPLETO
+--------------------------------------------
+KPIs de Tráfico
+
+Sesiones totales
+
+Usuarios únicos
+
+Crecimiento YoY / MoM / WoW
+
+Tiempo medio por sesión
+
+Porcentaje sesiones >60s
+
+Scroll medio
+
+Sesiones recurrentes
+
+KPIs de Demanda (Leads)
+
+Leads totales
+
+Leads cualificados
+
+Leads por canal
+
+Crecimiento
+
+Leads provenientes de contenido
+
+Activation / Ventas
+
+Reuniones agendadas
+
+% reuniones provenientes de contenidos
+
+Tiempo Lead→Meeting
+
+Ratio Lead→Meeting
+
+Reuniones por segmento
+
+Performance de Canales
+
+% de aportación al funnel
+
+CTR por canal
+
+Scroll medio por canal
+
+Tiempo medio por canal
+
+Ranking top conversiones
+
+Embudo General
+
+Visit → Lead
+
+Lead → Meeting
+
+Funnel completion
+
+Caídas por etapa
+
+Comparativa entre canales
+
+Indicadores de Intención
+
+High-Intent Sessions
+
+Deep Engagement Rate (tiempo + scroll + CTA)
+
+% tráfico cualificado
+
+% sesiones que regresan
+
+Páginas clave visitadas
+
+--------------------------------------------
+🟣 VISTA MARKETING / OPERACIONES
+--------------------------------------------
+SEO
+
+Tráfico orgánico
+
+Posición media
+
+Artículos top
+
+Engagement SEO
+
+Conversiones SEO
+
+LinkedIn
+
+Impresiones
+
+Engagement
+
+CTR
+
+Clics a web
+
+Seguidores nuevos
+
+Email
+
+Open rate
+
+CTR
+
+Conversiones
+
+Sesiones desde email
+
+Eventos
+
+Tráfico post-evento
+
+Leads del evento
+
+Interacciones
+
+Conversiones
+
+Embudo Digital
+
+Tráfico → CTA
+
+CTA → Conversión
+
+% tráfico sin conversión
+
+Embudo por canal
+
+Calidad del tráfico
+
+scroll >75%
+
+tiempo >60s
+
+señales profundas
+
+tráfico no cualificado (bots)
+
+--------------------------------------------
+🟢 VISTA DE CONTENIDOS
+--------------------------------------------
+Engagement real
+
+Nuevos usuarios
+
+Tiempo >60s
+
+Scroll >75%
+
+Señal doble scroll+tiempo
+
+High-Intent Content
+
+Scatter Plot (tráfico vs intención)
+
+Clasificación por high intent
+
+Conversiones por contenido
+
+Clics en CTA
+
+Formularios
+
+Descargas
+
+Calendly
+
+Métricas de priorización
+
+Artículos top por intención
+
+Gap Pages
+
+Hidden Gems
+
+Relación con el embudo
+
+Visit → Engagement → CTA → Lead
+
+--------------------------------------------
+🔴 VISTA LEADS & ACTIVACIÓN
+--------------------------------------------
+Generación de Leads
+
+Leads totales
+
+Leads por canal
+
+Crecimiento
+
+Leads cualificados
+
+Activación
+
+Reuniones agendadas
+
+Ratio Lead→Meeting
+
+Tiempo Lead→Meeting
+
+Funnel Lead → Oportunidad
+
+Calidad de lead
+
+Señales de intención
+
+Scroll + tiempo
+
+Repeticiones
+
+Visitas a Solutions
+
+Interacción profunda
+
+Aportación al pipeline
+
+Canales más efectivos
+
+Contenidos que generan más reuniones
+
+============================================================
+6. REGLAS DE IMPLEMENTACIÓN EN STREAMLIT
+============================================================
+Tema
+
+Aplicar tema dark
+
+Cargar CSS custom
+
+Componentes
+
+Cards KPI reutilizables
+
+Gráficos Plotly con tema Crata
+
+Selectores de fecha
+
+Navegación multipágina
+
+Filtros universales
+
+Rango de fechas
+
+Canal
+
+Tipo de contenido
+
+Segmento
+
+============================================================
+7. DEFINICIÓN DE KPIs Y MÉTRICAS (DICCIONARIO)
+============================================================
+
+Este apartado sirve para que Cursor entienda cómo calcular cada métrica.
+
+Ejemplos:
+
+High-Intent Session = scroll >75% + tiempo >60s + acción (CTA/form/click)
+
+Deep Engagement = scroll >75% Y tiempo >90s
+
+Visit→Lead Conversion = leads totales / sesiones
+
+Lead→Meeting = reuniones / leads
+
+(Agregar más si necesitas)
+
+============================================================
+8. ROADMAP FUTURO
+============================================================
+
+Módulo de alertas inteligentes
+
+Predicciones de crecimiento
+
+Reportes automáticos
+
+Integración completa con CRM
+
+Clustering de contenidos
+
+Scoring inteligente de leads
+
+============================================================
+FIN DEL DOCUMENTO
+============================================================

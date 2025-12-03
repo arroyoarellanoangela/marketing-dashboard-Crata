@@ -123,8 +123,14 @@ def zeros(n: int, /) -> pa.Int64Array:
     return pa.repeat(0, n)
 
 
+def native_to_narwhals_dtype(dtype: pa.DataType, version: Version) -> DType:
+    if isinstance(dtype, pa.ExtensionType):
+        return version.dtypes.Unknown()
+    return native_non_extension_to_narwhals_dtype(dtype, version)
+
+
 @lru_cache(maxsize=16)
-def native_to_narwhals_dtype(dtype: pa.DataType, version: Version) -> DType:  # noqa: C901, PLR0912
+def native_non_extension_to_narwhals_dtype(dtype: pa.DataType, version: Version) -> DType:  # noqa: C901, PLR0912
     dtypes = version.dtypes
     if pa.types.is_int64(dtype):
         return dtypes.Int64()
@@ -243,7 +249,7 @@ def narwhals_to_native_dtype(dtype: IntoDType, version: Version) -> pa.DataType:
 
 def extract_native(
     lhs: ArrowSeries, rhs: ArrowSeries | PythonLiteral | ScalarAny
-) -> tuple[ChunkedArrayAny | ScalarAny, ChunkedArrayAny | ScalarAny]:
+) -> tuple[ChunkedArrayAny, ChunkedArrayAny | ScalarAny]:
     """Extract native objects in binary  operation.
 
     If the comparison isn't supported, return `NotImplemented` so that the
@@ -479,3 +485,12 @@ def concat_tables(
 
 
 class ArrowSeriesNamespace(EagerSeriesNamespace["ArrowSeries", "ChunkedArrayAny"]): ...
+
+
+def arange(start: int, end: int, step: int) -> ArrayAny:
+    if BACKEND_VERSION < (21,):
+        import numpy as np  # ignore-banned-import
+
+        return pa.array(np.arange(start, end, step))
+    # NOTE: Added in https://github.com/apache/arrow/pull/46778
+    return pa.arange(start, end, step)  # type: ignore[attr-defined]

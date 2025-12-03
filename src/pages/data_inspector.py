@@ -70,7 +70,7 @@ def main():
     
     # Verificar si hay datos cargados
     if 'analytics_data' not in st.session_state or not st.session_state['analytics_data']:
-        st.warning("⚠️ No hay datos de Google Analytics cargados. Ve a 'Analytics Overview' y carga los datos primero.")
+        st.warning("⚠️ No hay datos de Google Analytics cargados. Ve a 'Executive Dashboard' y carga los datos primero.")
         return
     
     analytics_data = st.session_state['analytics_data']

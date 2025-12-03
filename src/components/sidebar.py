@@ -219,7 +219,7 @@ def mostrar_sidebar_variables():
     """, unsafe_allow_html=True)
     
     # Navegación
-    st.sidebar.markdown("### 🧭 Navegación")
+    st.sidebar.markdown("### Navegación")
     
     # Botones de navegación con estilo personalizado
     st.sidebar.markdown("""
@@ -269,34 +269,30 @@ def mostrar_sidebar_variables():
     """, unsafe_allow_html=True)
     
     # Botones de navegación
-    if st.sidebar.button("🏠 Página Principal", use_container_width=True):
+    if st.sidebar.button("Página Principal", use_container_width=True):
         st.session_state.page = "dashboard"
         st.rerun()
     
-    if st.sidebar.button("📈 Analytics Overview", use_container_width=True):
+    if st.sidebar.button("Executive Dashboard", use_container_width=True):
         st.session_state.page = "general_overview"
         st.rerun()
     
-    if st.sidebar.button("🔍 Data Inspector", use_container_width=True):
-        st.session_state.page = "data_inspector"
-        st.rerun()
+
     
-    if st.sidebar.button("📊 Executive Dashboard", use_container_width=True):
-        st.session_state.page = "executive_dashboard"
-        st.rerun()
-    
-    if st.sidebar.button("🚀 Marketing Operations", use_container_width=True):
+    if st.sidebar.button("Marketing Operations", use_container_width=True):
         st.session_state.page = "marketing_operations"
         st.rerun()
     
-    if st.sidebar.button("📝 Content Performance", use_container_width=True):
+    if st.sidebar.button("Content Performance", use_container_width=True):
         st.session_state.page = "content_performance_growth"
         st.rerun()
     
-    if st.sidebar.button("🎯 Leads & Activation", use_container_width=True):
+    if st.sidebar.button("Leads & Activation", use_container_width=True):
         st.session_state.page = "leads_activation"
         st.rerun()
-    
+    if st.sidebar.button("Data Inspector", use_container_width=True):
+        st.session_state.page = "data_inspector"
+        st.rerun()
     st.sidebar.markdown("---")
 
 
@@ -414,7 +410,7 @@ def mostrar_sidebar_filtros():
     </style>
     """, unsafe_allow_html=True)
     
-    if st.sidebar.button("🚀 Apply Filters", use_container_width=True):
+    if st.sidebar.button("Apply Filters", use_container_width=True):
         st.session_state["filtro_anios"] = selected_years
         st.session_state["filtro_meses"] = selected_months_abbr
         st.session_state["filters_applied"] = True
@@ -566,24 +562,24 @@ def create_analytics_sidebar():
 def create_navigation_sidebar():
     """Crea el sidebar de navegación"""
     
-    st.sidebar.header("🧭 Navegación")
+    st.sidebar.header("Navegación")
     
     # Botones de navegación
-    if st.sidebar.button("🏠 Página Principal", use_container_width=True):
+    if st.sidebar.button("Página Principal", use_container_width=True):
         st.session_state.page = "dashboard"
         st.rerun()
     
-    if st.sidebar.button("📊 Analytics Overview", use_container_width=True):
+    if st.sidebar.button("Executive Dashboard", use_container_width=True):
         st.session_state.page = "general_overview"
         st.rerun()
     
-    if st.sidebar.button("📋 Tables", use_container_width=True):
+    if st.sidebar.button("Tables", use_container_width=True):
         st.session_state.page = "tables"
         st.rerun()
     
     # Información del proyecto
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📋 Información del Proyecto")
+    st.sidebar.markdown("### Información del Proyecto")
     st.sidebar.markdown("""
     **Marketing Dashboard**
     

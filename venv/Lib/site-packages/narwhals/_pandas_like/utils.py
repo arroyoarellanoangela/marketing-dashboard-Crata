@@ -144,7 +144,7 @@ def is_pandas_or_modin(implementation: Implementation) -> bool:
 
 def align_and_extract_native(
     lhs: PandasLikeSeries, rhs: PandasLikeSeries | object
-) -> tuple[pd.Series[Any] | object, pd.Series[Any] | object]:
+) -> tuple[pd.Series[Any], pd.Series[Any] | object]:
     """Validate RHS of binary operation.
 
     If the comparison isn't supported, return `NotImplemented` so that the
@@ -170,6 +170,7 @@ def align_and_extract_native(
     if isinstance(rhs, list):
         msg = "Expected Series or scalar, got list."
         raise TypeError(msg)
+
     # `rhs` must be scalar, so just leave it as-is
     return lhs.native, rhs
 
@@ -552,7 +553,7 @@ def narwhals_to_native_dtype(  # noqa: C901, PLR0912
     if isinstance_or_issubclass(dtype, dtypes.Date):
         try:
             import pyarrow as pa  # ignore-banned-import
-        except ModuleNotFoundError as exc:  # pragma: no cover
+        except ModuleNotFoundError as exc:
             # BUG: Never re-raised?
             msg = "'pyarrow>=13.0.0' is required for `Date` dtype."
             raise ModuleNotFoundError(msg) from exc
@@ -699,3 +700,7 @@ def import_array_module(implementation: Implementation, /) -> ModuleType:
 
 
 class PandasLikeSeriesNamespace(EagerSeriesNamespace["PandasLikeSeries", Any]): ...
+
+
+def make_group_by_kwargs(*, drop_null_keys: bool) -> dict[str, bool]:
+    return {"sort": False, "as_index": True, "dropna": drop_null_keys, "observed": True}
