@@ -41,7 +41,17 @@ def load_credentials():
             print(f"[WARN] Error leyendo {path}: {e}")
             continue
     
-    print("[ERROR] No se encontro el archivo 'credentials.json' en ninguna ubicacion")
+    # Si no se encontró el archivo, intentar desde variable de entorno
+    google_creds_env = os.getenv('GOOGLE_CREDENTIALS')
+    if google_creds_env:
+        try:
+            credentials_info = json.loads(google_creds_env)
+            print("[OK] Credentials cargado desde variable de entorno GOOGLE_CREDENTIALS")
+            return credentials_info
+        except Exception as e:
+            print(f"[WARN] Error parseando GOOGLE_CREDENTIALS: {e}")
+
+    print("[ERROR] No se encontro el archivo 'credentials.json' ni la variable GOOGLE_CREDENTIALS")
     return None
 
 

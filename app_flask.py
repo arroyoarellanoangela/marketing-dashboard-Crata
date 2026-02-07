@@ -59,7 +59,7 @@ app = Flask(__name__,
             static_folder='static')
 
 # Clave secreta fija para mantener sesiones entre reinicios
-app.secret_key = 'crata-ai-dashboard-secret-key-2024-secure'
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'crata-ai-dashboard-secret-key-2024-secure')
 app.config['SESSION_COOKIE_SECURE'] = False  # Cambiar a True en producción con HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
