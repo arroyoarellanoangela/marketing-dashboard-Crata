@@ -14,11 +14,11 @@ google-auth-oauthlib==1.1.0
 google-auth-httplib2==0.1.1
 
 # Data Processing
-pandas==2.1.3
-numpy==1.26.2
+pandas>=2.2.0
+numpy>=1.26.0
 
 # Charts (optional - using Plotly.js on frontend)
-plotly==5.17.0
+plotly>=5.17.0
 
 # Production Server
 gunicorn==21.2.0
@@ -26,8 +26,3 @@ gunicorn==21.2.0
 # Utilities
 python-dateutil==2.8.2
 python-dotenv==1.0.0
-
-# =============================================================================
-# Legacy (Streamlit - only if you want to run the old version)
-# =============================================================================
-# streamlit==1.28.1
