@@ -3903,33 +3903,27 @@ def auto_reload_worker():
 # PUNTO DE ENTRADA
 # =============================================================================
 
+# =============================================================================
+# INICIALIZACIÓN (se ejecuta tanto con gunicorn como con python directamente)
+# =============================================================================
+init_users_db()
+init_diana_meetings_db()
+init_leads_db()
+init_team_metrics_db()
+init_analytics()
+
+if load_data_from_disk():
+    print("[OK] Datos restaurados desde cache")
+else:
+    print("[INFO] No hay datos en cache, carga desde 'Getting Started'")
+
+reload_thread = threading.Thread(target=auto_reload_worker, daemon=True)
+reload_thread.start()
+print("[AUTO-RELOAD] Hilo de recarga automática iniciado (cada 10 minutos)")
+
 if __name__ == '__main__':
     print("="*60)
     print("CRATA AI - Growth Intelligence Dashboard")
     print("="*60)
-    print("Iniciando servidor Flask...")
-    print("Abre tu navegador en: http://127.0.0.1:5000")
-    print("="*60)
-    
-    # Inicializar base de datos de usuarios
-    init_users_db()
-    init_diana_meetings_db()
-    init_leads_db()
-    init_team_metrics_db()
-    
-    # Inicializar analytics al arrancar
-    init_analytics()
-    
-    # Intentar cargar datos desde cache
-    if load_data_from_disk():
-        print("[OK] Datos restaurados desde cache")
-    else:
-        print("[INFO] No hay datos en cache, carga desde 'Getting Started'")
-    
-    # Iniciar hilo de recarga automática cada 10 minutos
-    reload_thread = threading.Thread(target=auto_reload_worker, daemon=True)
-    reload_thread.start()
-    print("[AUTO-RELOAD] Hilo de recarga automática iniciado (cada 10 minutos)")
-    
     app.run(debug=True, host='0.0.0.0', port=5000)
 
