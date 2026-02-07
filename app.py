@@ -6,10 +6,10 @@ CRATA AI - GROWTH INTELLIGENCE DASHBOARD
 Punto de entrada principal de la aplicación.
 Dashboard de Marketing para Crata AI con 4 vistas principales:
 
-1. Vista Ejecutiva - CEO/Dirección
-2. Vista Marketing/Operaciones - Growth Team
-3. Vista de Contenidos - SEO/Content
-4. Vista Leads & Activación - Marketing + Ventas
+1. Tráfico General
+2. Fuentes de Tráfico
+3. Página y Contenido
+4. Comportamiento Usuarios
 
 Basado en el documento de planificación del Dashboard de Marketing de Crata AI.
 =============================================================================
@@ -20,10 +20,10 @@ import streamlit as st
 # Importar páginas del dashboard
 from src.pages.dashboard import main as dashboard_main
 from src.pages.general_overview import main as general_overview_main
-from src.pages.data_inspector import main as data_inspector_main
-from src.pages.marketing_operations import main as marketing_operations_main
-from src.pages.content_performance_growth import main as content_performance_growth_main
-from src.pages.leads_activation import main as leads_activation_main
+from src.pages.traffic_sources import main as traffic_sources_main
+from src.pages.content_performance import main as content_performance_main
+from src.pages.user_behavior import main as user_behavior_main
+from src.pages.alerts import main as alerts_main
 
 
 # =============================================================================
@@ -38,29 +38,29 @@ PAGES = {
         "description": "Página de inicio del dashboard"
     },
     "general_overview": {
-        "title": "Executive Dashboard",
+        "title": "Tráfico General",
         "function": general_overview_main,
-        "description": "Vista Ejecutiva - CEO/Dirección"
+        "description": "Vista general de tráfico"
     },
-    "data_inspector": {
-        "title": "Data Inspector",
-        "function": data_inspector_main,
-        "description": "Explorador de datos detallado"
+    "traffic_sources": {
+        "title": "Fuentes de Tráfico",
+        "function": traffic_sources_main,
+        "description": "Análisis de fuentes de tráfico"
     },
-    "marketing_operations": {
-        "title": "Marketing Operations",
-        "function": marketing_operations_main,
-        "description": "Vista Marketing/Operaciones - Growth Team"
+    "content_performance": {
+        "title": "Página y Contenido",
+        "function": content_performance_main,
+        "description": "Rendimiento de páginas y contenido"
     },
-    "content_performance_growth": {
-        "title": "Content Performance",
-        "function": content_performance_growth_main,
-        "description": "Vista de Contenidos - SEO/Content"
+    "user_behavior": {
+        "title": "Comportamiento Usuarios",
+        "function": user_behavior_main,
+        "description": "Análisis de comportamiento de usuarios"
     },
-    "leads_activation": {
-        "title": "Leads & Activation",
-        "function": leads_activation_main,
-        "description": "Vista Leads & Activación - Marketing + Ventas"
+    "alerts": {
+        "title": "Alertas",
+        "function": alerts_main,
+        "description": "Sistema de alertas y notificaciones"
     },
 }
 

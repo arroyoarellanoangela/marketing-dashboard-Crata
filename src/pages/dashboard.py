@@ -92,11 +92,11 @@ def main():
     st.markdown("""
     <style>
     .main .block-container {
-        background: rgba(255, 255, 255, 0.95);
+        background: transparent;
         border-radius: 10px;
         padding: 2rem;
         margin-top: 2rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: none;
     }
     
     .stImage {
@@ -104,19 +104,66 @@ def main():
     }
     
     .stButton > button {
-        background: #2E4543;
-        color: white;
+        background: linear-gradient(80deg, rgba(29, 71, 68, 1) 0%, rgba(98, 169, 167, 1) 100%) !important;
+        color: rgba(255, 255, 255, 1) !important;
+        background-clip: unset !important;
+        -webkit-background-clip: unset !important;
         border: none;
         border-radius: 8px;
-        padding: 0.5rem 1rem;
+        padding: 0.75rem 2rem;
         font-weight: bold;
         transition: all 0.3s ease;
+        opacity: 0.8;
     }
     
     .stButton > button:hover {
-        background: #3A5A58;
+        background: linear-gradient(80deg, rgba(29, 71, 68, 1) 0%, rgba(98, 169, 167, 1) 100%) !important;
+        opacity: 1;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Ocultar header de Streamlit */
+    header[data-testid="stHeader"] {
+        display: none !important;
+    }
+
+    /* Centrar todo el contenido del bloque principal */
+    .main .block-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Centrar las columnas */
+    [data-testid="stHorizontalBlock"] {
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    /* Centrar imagen */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+        text-align: center;
+    }
+
+    [data-testid="stImage"] img {
+        margin: 0 auto;
+    }
+
+    /* Centrar el botón */
+    .stButton {
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .stButton > button {
+        min-width: 280px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -124,18 +171,18 @@ def main():
     # from src.components.sidebar import mostrar_sidebar_variables
     # mostrar_sidebar_variables()
     
-    # Contenido principal simplificado
+    # Contenido principal simplificado - centrado con contenedor
     st.markdown("<div style='height: 15rem;'></div>", unsafe_allow_html=True)
     
-    # Logo centrado
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Logo centrado usando columnas con espaciadores más grandes
+    col1, col2, col3 = st.columns([2, 1, 2])
     with col2:
         st.image("src/assets/logo.png", width=300)
     
     st.markdown("<div style='height: 3rem;'></div>", unsafe_allow_html=True)
     
-    # Botón Getting Started centrado
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Botón Getting Started centrado con columnas anchas a los lados
+    col1, col2, col3 = st.columns([2, 1, 2])
     with col2:
         if st.button("🚀 Getting Started", type="primary", use_container_width=True):
             st.session_state.page = "general_overview"

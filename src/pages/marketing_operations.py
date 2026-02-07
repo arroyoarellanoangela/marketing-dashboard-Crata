@@ -5,18 +5,10 @@ Vista de Marketing y Operaciones del Growth Intelligence Dashboard
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
-# Importar configuraciones y helpers
-from src.config.settings import APP_CONFIG, GA4_CONFIG, GA4_METRICS, GA4_DIMENSIONS, DATA_SETS_CONFIG
-from src.helpers.analytics_helpers import load_credentials, initialize_analytics_client, get_analytics_data, get_all_analytics_data
-from src.helpers.visualization_helpers import create_line_chart, create_bar_chart, create_metrics_summary, display_data_preview
-from src.helpers.growth_analytics_helpers import get_all_growth_data, calculate_growth_metrics
-
-
-
+from src.config.settings import APP_CONFIG, GA4_CONFIG, DATA_SETS_CONFIG
+from src.helpers.analytics_helpers import load_credentials, initialize_analytics_client, get_all_analytics_data
 
 
 def main():
@@ -84,8 +76,31 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Contenido principal - por implementar
-    st.info("🚧 Contenido en desarrollo - Próximamente")
+    # Cargar datos si no están cargados
+    if 'analytics_data' not in st.session_state or not st.session_state['analytics_data']:
+        credentials = load_credentials()
+        if credentials:
+            client = initialize_analytics_client(credentials)
+            if client:
+                today = datetime.now().date()
+                start_date = (today - timedelta(days=365)).strftime("%Y-%m-%d")
+                end_date = today.strftime("%Y-%m-%d")
+                
+                with st.spinner("🔄 Cargando datos de Google Analytics..."):
+                    all_data = get_all_analytics_data(client, "381346600", start_date, end_date, DATA_SETS_CONFIG)
+                    st.session_state['analytics_data'] = all_data
+    
+    # Contenido - Por implementar
+    st.info("📊 Contenido próximamente...")
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("""
+    <div style='text-align: center; color: #666; padding: 20px;'>
+        <p>Growth Intelligence Dashboard - Marketing Operations</p>
+        <p><small>Property ID: 381346600 (Crata GA4) | Configurado automáticamente</small></p>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":

@@ -212,7 +212,7 @@ def get_global_css():
     
     /* Botones */
     .stButton > button {{
-        background: {COLORS['accent_teal']} !important;
+        background: linear-gradient(80deg, rgba(29, 71, 68, 1) 0%, rgba(98, 169, 167, 1) 100%) !important;
         color: {COLORS['background_primary']} !important;
         border: none !important;
         border-radius: {SPACING['button_radius']} !important;
@@ -220,6 +220,7 @@ def get_global_css():
         font-weight: 600 !important;
         font-family: {TYPOGRAPHY['font_primary']} !important;
         transition: all 0.3s ease !important;
+        opacity: 0.8 !important;
     }}
     
     .stButton > button:hover {{
@@ -268,6 +269,11 @@ def get_global_css():
     .stAlert {{
         background-color: {COLORS['background_secondary']} !important;
         color: {COLORS['text_primary']} !important;
+    }}
+    
+    /* Hide fullscreen buttons */
+    button[data-testid="StyledFullScreenButton"] {{
+        visibility: hidden !important;
     }}
     </style>
     """

@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+
+{% block title %}Crata AI - Growth Intelligence Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .landing-container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 2;
+        padding: 2rem;
+    }
+    
+    .logo-container {
+        animation: fadeInUp 1s ease-out;
+        margin-bottom: 2rem;
+    }
+    
+    .logo-container img {
+        max-width: 280px;
+        filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.3));
+    }
+    
+    /* Auth Card */
+    .auth-card {
+        background: rgba(20, 30, 35, 0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(108, 168, 164, 0.3);
+        border-radius: 20px;
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 420px;
+        animation: fadeInUp 1s ease-out 0.2s both;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    }
+    
+    .auth-tabs {
+        display: flex;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid rgba(108, 168, 164, 0.2);
+    }
+    
+    .auth-tab {
+        flex: 1;
+        padding: 1rem;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.5);
+        font-family: 'Outfit', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .auth-tab::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, #6ca8a4, #1d4744);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+    
+    .auth-tab.active {
+        color: #fff;
+    }
+    
+    .auth-tab.active::after {
+        transform: scaleX(1);
+    }
+    
+    .auth-tab:hover:not(.active) {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .auth-form {
+        display: none;
+    }
+    
+    .auth-form.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        color: rgba(255, 255, 255, 0.7);
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 0.9rem 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(108, 168, 164, 0.3);
+        border-radius: 10px;
+        color: #fff;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+        outline: none;
+        border-color: #6ca8a4;
+        background: rgba(108, 168, 164, 0.1);
+        box-shadow: 0 0 20px rgba(108, 168, 164, 0.2);
+    }
+    
+    .form-group input::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .email-hint {
+        font-size: 0.8rem;
+        color: rgba(108, 168, 164, 0.8);
+        margin-top: 0.4rem;
+    }
+    
+    .submit-btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: 'Outfit', sans-serif;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(29, 71, 68, 0.9) 0%, rgba(98, 169, 167, 0.9) 100%);
+        border: 2px solid rgba(108, 168, 164, 0.5);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    
+    .submit-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(108, 168, 164, 0.4);
+        background: linear-gradient(135deg, rgba(98, 169, 167, 1) 0%, rgba(29, 71, 68, 1) 100%);
+    }
+    
+    .submit-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    
+    .submit-btn .icon {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .submit-btn:hover .icon {
+        transform: translateX(5px);
+    }
+    
+    .message {
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        display: none;
+    }
+    
+    .message.error {
+        background: rgba(244, 67, 54, 0.2);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        color: #ff6b6b;
+        display: block;
+    }
+    
+    .message.success {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.5);
+        color: #81c784;
+        display: block;
+    }
+    
+    .tagline {
+        margin-top: 2rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.5);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        animation: fadeInUp 1s ease-out 0.4s both;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Decorative elements */
+    .decorative-circle {
+        position: fixed;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(108, 168, 164, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 1;
+    }
+    
+    .circle-1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        right: -200px;
+        animation: float 20s ease-in-out infinite;
+    }
+    
+    .circle-2 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: -100px;
+        animation: float 15s ease-in-out infinite reverse;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(30px, 30px); }
+    }
+    
+    .spinner-small {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Password visibility toggle */
+    .password-wrapper {
+        position: relative;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: color 0.3s;
+    }
+    
+    .password-toggle:hover {
+        color: #6ca8a4;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Video Background -->
+<video autoplay muted loop playsinline class="video-background">
+    <source src="{{ url_for('static', filename='video/background.mp4') }}" type="video/mp4">
+</video>
+<div class="video-overlay"></div>
+
+<!-- Decorative Elements -->
+<div class="decorative-circle circle-1"></div>
+<div class="decorative-circle circle-2"></div>
+
+<!-- Main Content -->
+<div class="landing-container">
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Crata AI Logo">
+    </div>
+    
+    <!-- Auth Card -->
+    <div class="auth-card">
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('login')">Iniciar Sesión</button>
+            <button class="auth-tab" onclick="switchTab('register')">Registrarse</button>
+        </div>
+        
+        <!-- Messages -->
+        <div id="authMessage" class="message"></div>
+        
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="loginEmail">Email corporativo</label>
+                <input type="email" id="loginEmail" name="email" 
+                       placeholder="tu.nombre@crata-ai.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="loginPassword">Contraseña</label>
+                <div class="password-wrapper">
+                    <input type="password" id="loginPassword" name="password" 
+                           placeholder="••••••••" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)">👁</button>
+                </div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="loginBtn">
+                <span id="loginBtnText">Entrar</span>
+                <span class="icon">→</span>
+            </button>
+        </form>
+        
+        <!-- Register Form -->
+        <form id="registerForm" class="auth-form" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label for="registerName">Nombre completo</label>
+                <input type="text" id="registerName" name="name" 
+                       placeholder="Tu nombre" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="registerEmail">Email corporativo</label>
+                <input type="email" id="registerEmail" name="email" 
+                       placeholder="tu.nombre@crata-ai.com" required>
+                <p class="email-hint">🔒 Solo emails @crata-ai.com pueden registrarse</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="registerPassword">Contraseña</label>
+                <div class="password-wrapper">
+                    <input type="password" id="registerPassword" name="password" 
+                           placeholder="Mínimo 6 caracteres" required minlength="6">
+                    <button type="button" class="password-toggle" onclick="togglePassword('registerPassword', this)">👁</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="registerPasswordConfirm">Confirmar contraseña</label>
+                <div class="password-wrapper">
+                    <input type="password" id="registerPasswordConfirm" name="password_confirm" 
+                           placeholder="Repite la contraseña" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('registerPasswordConfirm', this)">👁</button>
+                </div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="registerBtn">
+                <span id="registerBtnText">Crear cuenta</span>
+                <span class="icon">→</span>
+            </button>
+        </form>
+    </div>
+    
+    <p class="tagline">Growth Intelligence Platform</p>
+</div>
+
+<script>
+    function switchTab(tab) {
+        // Update tabs
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        
+        if (tab === 'login') {
+            document.querySelector('.auth-tab:nth-child(1)').classList.add('active');
+            document.getElementById('loginForm').classList.add('active');
+        } else {
+            document.querySelector('.auth-tab:nth-child(2)').classList.add('active');
+            document.getElementById('registerForm').classList.add('active');
+        }
+        
+        // Clear messages
+        hideMessage();
+    }
+    
+    function showMessage(text, type) {
+        const msg = document.getElementById('authMessage');
+        msg.textContent = text;
+        msg.className = 'message ' + type;
+    }
+    
+    function hideMessage() {
+        const msg = document.getElementById('authMessage');
+        msg.className = 'message';
+        msg.textContent = '';
+    }
+    
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            btn.textContent = '👁';
+        }
+    }
+    
+    function setButtonLoading(btnId, textId, loading) {
+        const btn = document.getElementById(btnId);
+        const text = document.getElementById(textId);
+        
+        if (loading) {
+            btn.disabled = true;
+            text.innerHTML = '<span class="spinner-small"></span>';
+        } else {
+            btn.disabled = false;
+            text.textContent = btnId === 'loginBtn' ? 'Entrar' : 'Crear cuenta';
+        }
+    }
+    
+    async function handleLogin(e) {
+        e.preventDefault();
+        hideMessage();
+        
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        // Validar dominio
+        if (!email.toLowerCase().endsWith('@crata-ai.com')) {
+            showMessage('Solo se permiten emails con dominio @crata-ai.com', 'error');
+            return;
+        }
+        
+        setButtonLoading('loginBtn', 'loginBtnText', true);
+        
+        try {
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showMessage('¡Bienvenido! Redirigiendo...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 500);
+            } else {
+                showMessage(result.message, 'error');
+                setButtonLoading('loginBtn', 'loginBtnText', false);
+            }
+        } catch (error) {
+            showMessage('Error de conexión. Intenta de nuevo.', 'error');
+            setButtonLoading('loginBtn', 'loginBtnText', false);
+        }
+    }
+    
+    async function handleRegister(e) {
+        e.preventDefault();
+        hideMessage();
+        
+        const name = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+        
+        // Validar dominio
+        if (!email.toLowerCase().endsWith('@crata-ai.com')) {
+            showMessage('Solo se permiten emails con dominio @crata-ai.com', 'error');
+            return;
+        }
+        
+        // Validar contraseñas
+        if (password !== passwordConfirm) {
+            showMessage('Las contraseñas no coinciden', 'error');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showMessage('La contraseña debe tener al menos 6 caracteres', 'error');
+            return;
+        }
+        
+        setButtonLoading('registerBtn', 'registerBtnText', true);
+        
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showMessage('¡Cuenta creada! Redirigiendo al dashboard...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 500);
+            } else {
+                showMessage(result.message, 'error');
+                setButtonLoading('registerBtn', 'registerBtnText', false);
+            }
+        } catch (error) {
+            showMessage('Error de conexión. Intenta de nuevo.', 'error');
+            setButtonLoading('registerBtn', 'registerBtnText', false);
+        }
+    }
+</script>
+{% endblock %}

@@ -5,9 +5,11 @@ Configuración central de la aplicación
 Este archivo contiene todas las configuraciones de la aplicación:
 - Configuración de la app (Streamlit)
 - Configuración de Google Analytics 4
+- Configuración de Apollo
 - Métricas y dimensiones disponibles
 - Conjuntos de datos para análisis
 """
+import os
 
 # =============================================================================
 # CONFIGURACIÓN DE LA APLICACIÓN
@@ -29,6 +31,16 @@ GA4_CONFIG = {
     "property_id": "381346600",
     "scopes": ["https://www.googleapis.com/auth/analytics.readonly"],
     "credentials_file": "credentials.json",
+}
+
+# =============================================================================
+# CONFIGURACIÓN DE DIANA
+# =============================================================================
+
+DIANA_CONFIG = {
+    "api_key": os.getenv("DIANA_API_KEY", ""),  # Configurar en variables de entorno
+    "api_url": "https://api.diana.io/v1",  # URL de la API de Diana
+    "timeout": 30
 }
 
 # =============================================================================
@@ -91,25 +103,26 @@ GA4_DIMENSIONS = [
 # =============================================================================
 
 DATA_SETS_CONFIG = {
+    # Dataset principal con TODAS las dimensiones para filtros
     "datos_temporales": {
-        "dimensions": ["date"],
+        "dimensions": ["date", "country", "pagePath", "sessionDefaultChannelGrouping"],
         "metrics": ["sessions", "totalUsers", "newUsers", "screenPageViews", "bounceRate", "averageSessionDuration", "engagementRate", "conversions", "totalRevenue", "engagedSessions"]
     },
     "datos_geograficos": {
-        "dimensions": ["country", "city", "region"],
-        "metrics": ["sessions", "totalUsers", "screenPageViews", "conversions", "engagedSessions"]
+        "dimensions": ["date", "country", "city", "region", "pagePath", "sessionDefaultChannelGrouping"],
+        "metrics": ["sessions", "totalUsers", "screenPageViews", "conversions", "engagedSessions", "averageSessionDuration"]
     },
     "datos_dispositivos": {
-        "dimensions": ["deviceCategory", "operatingSystem", "browser"],
+        "dimensions": ["deviceCategory", "operatingSystem", "browser", "country", "sessionDefaultChannelGrouping"],
         "metrics": ["sessions", "totalUsers", "screenPageViews", "bounceRate", "averageSessionDuration", "engagedSessions"]
     },
     "datos_trafico": {
-        "dimensions": ["sessionSource", "sessionMedium", "sessionDefaultChannelGrouping", "sessionSourceMedium"],
+        "dimensions": ["sessionSource", "sessionMedium", "sessionDefaultChannelGrouping", "sessionSourceMedium", "country", "pagePath"],
         "metrics": ["sessions", "totalUsers", "newUsers", "bounceRate", "averageSessionDuration", "conversions", "engagedSessions"]
     },
     "datos_contenido": {
-        "dimensions": ["pagePath", "pageTitle", "landingPage"],
-        "metrics": ["screenPageViews", "sessions", "bounceRate", "averageSessionDuration", "engagedSessions", "userEngagementDuration"]
+        "dimensions": ["date", "pagePath", "pageTitle", "landingPage", "country", "sessionDefaultChannelGrouping"],
+        "metrics": ["screenPageViews", "sessions", "bounceRate", "averageSessionDuration", "engagedSessions", "userEngagementDuration", "activeUsers", "eventCount"]
     },
     "datos_usuarios": {
         "dimensions": ["date"],

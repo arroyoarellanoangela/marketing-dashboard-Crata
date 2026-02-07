@@ -176,7 +176,19 @@ def mostrar_sidebar_variables():
     section[data-testid="stSidebar"] > div:first-child {
         background-color: #000000;  /* Fondo del contenido principal */
         padding: 15px;
+        padding-top: 0 !important;
         width: 99%;
+    }
+    
+    /* Eliminar espacio superior del sidebar */
+    section[data-testid="stSidebar"] > div > div:first-child {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        padding-top: 0 !important;
+        gap: 0.5rem !important;
     }
 
     /* Botones redondos personalizados */
@@ -208,8 +220,53 @@ def mostrar_sidebar_variables():
 
     st.markdown("""
         <style>
+        /* Ocultar navegación del sidebar */
         div[data-testid="stSidebarNav"] {
             display: none;
+        }
+        
+        /* Ocultar header completo de Streamlit */
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+        
+        /* Ocultar botón X de cerrar sidebar */
+        button[data-testid="stSidebarCollapseButton"],
+        .stSidebar button[kind="header"],
+        section[data-testid="stSidebar"] button[aria-label="Close"],
+        [data-testid="stSidebarContent"] > div:first-child > div:first-child {
+            display: none !important;
+        }
+        
+        /* Ocultar el collapse button del sidebar */
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        /* Ocultar toolbar superior */
+        .stDeployButton {
+            display: none !important;
+        }
+        
+        /* Ocultar menú hamburguesa */
+        #MainMenu {
+            display: none !important;
+        }
+        
+        /* Ajustar el contenido principal para ocupar el espacio del header */
+        .main .block-container {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Eliminar espacio superior del contenedor principal */
+        .stApp > header + div {
+            padding-top: 0 !important;
+        }
+        
+        section.main > div.block-container {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -221,78 +278,145 @@ def mostrar_sidebar_variables():
     # Navegación
     st.sidebar.markdown("### Navegación")
     
-    # Botones de navegación con estilo personalizado
+    # Estilos CSS para botones de navegación (ANTES de renderizar los botones)
     st.sidebar.markdown("""
     <style>
-    .stSidebar .stButton > button {
-        background: #2E4543 !important;
+    /* Estilo base para botones de navegación en sidebar */
+    section[data-testid="stSidebar"] .stButton > button {
+        background: #1a1a1a !important;
         color: white !important;
-        border: none !important;
+        border: 1px solid #3a3a3a !important;
         border-radius: 8px !important;
-        padding: 0.5rem 1rem !important;
+        padding: 0.6rem 1rem !important;
         font-weight: 600 !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.2s ease !important;
         background-image: none !important;
     }
-    .stSidebar .stButton > button:hover {
-        background: linear-gradient(135deg, #2E4543 0%, #3A5A58 50%, #4A7C7A 100%) !important;
-        color: white !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(46, 69, 67, 0.3) !important;
+    
+    /* Espacio entre botones de navegación */
+    section[data-testid="stSidebar"] .stButton {
+        margin-bottom: 0.35rem !important;
+    }
+    
+    /* Hover - igual que página activa: fondo claro, borde claro, letras negras */
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        background: #CDE3DE !important;
+        color: #000000 !important;
+        border: 2px solid #6CA8A4 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 8px rgba(108, 168, 164, 0.4) !important;
+    }
+    
+    /* Focus state también con estilo claro */
+    section[data-testid="stSidebar"] .stButton > button:focus {
+        background: #CDE3DE !important;
+        color: #000000 !important;
+        border: 2px solid #6CA8A4 !important;
+        box-shadow: 0 0 0 2px rgba(108, 168, 164, 0.3) !important;
+    }
+    
+    /* Active/pressed state */
+    section[data-testid="stSidebar"] .stButton > button:active {
+        background: #A7C9C6 !important;
+        color: #000000 !important;
+        border: 2px solid #6CA8A4 !important;
+        transform: translateY(0) !important;
     }
     </style>
     """, unsafe_allow_html=True)
     
-    # Navegación
-
+    # Obtener página actual
+    current_page = st.session_state.get("page", "general_overview")
     
-    # Botones de navegación con estilo personalizado
+    # Definir páginas de navegación con descripciones
+    nav_pages = [
+        {
+            "page": "general_overview", 
+            "label": "Tráfico General",
+            "desc": "Visión general del tráfico web, métricas de visitas, usuarios y tendencias principales"
+        },
+        {
+            "page": "traffic_sources", 
+            "label": "Fuentes de Tráfico",
+            "desc": "Análisis de canales de adquisición: orgánico, directo, referral, social y campañas"
+        },
+        {
+            "page": "content_performance", 
+            "label": "Página y Contenido",
+            "desc": "Rendimiento de páginas, contenido más visitado y métricas de engagement"
+        },
+        {
+            "page": "user_behavior", 
+            "label": "Comportamiento Usuarios",
+            "desc": "Patrones de navegación, tiempo en página, rebote y recorridos de usuario"
+        },
+        {
+            "page": "alerts", 
+            "label": "Alertas",
+            "desc": "Sistema de alertas y notificaciones sobre cambios significativos en métricas"
+        },
+    ]
+    
+    # CSS para el icono de información
     st.sidebar.markdown("""
     <style>
-    .stSidebar .stButton > button {
-        background: #2E4543 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0.5rem 1rem !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-        background-image: none !important;
+    .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background: #3a3a3a;
+        color: #999;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: help;
+        transition: all 0.2s ease;
+        font-style: italic;
+        font-family: Georgia, serif;
+        margin-top: 5px;
+        vertical-align: middle;
     }
-    .stSidebar .stButton > button:hover {
-        background: linear-gradient(135deg, #2E4543 0%, #3A5A58 50%, #4A7C7A 100%) !important;
-        color: white !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(46, 69, 67, 0.3) !important;
+    .info-icon:hover {
+        background: #6CA8A4;
+        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
     
-    # Botones de navegación
-    if st.sidebar.button("Página Principal", use_container_width=True):
-        st.session_state.page = "dashboard"
-        st.rerun()
+    # Renderizar botones de navegación con estilo condicional
+    for i, nav in enumerate(nav_pages):
+        is_active = current_page == nav["page"]
+        
+        # Usar columnas consistentes para todos los botones
+        col1, col2 = st.sidebar.columns([0.88, 0.12])
+        
+        with col1:
+            if is_active:
+                # Botón activo como HTML con mismo espaciado
+                st.markdown(f"""
+                <div style="
+                    background: #CDE3DE;
+                    color: #000000;
+                    border: 2px solid #6CA8A4;
+                    border-radius: 8px;
+                    padding: 0.6rem 1rem;
+                    font-weight: 600;
+                    text-align: center;
+                    cursor: default;
+                    margin-bottom: 1rem;
+                ">{nav["label"]}</div>
+                """, unsafe_allow_html=True)
+            else:
+                # Botón normal
+                if st.button(nav["label"], use_container_width=True, key=f"nav_{i}"):
+                    st.session_state.page = nav["page"]
+                    st.rerun()
+        
+        with col2:
+            st.markdown(f'<span class="info-icon" title="{nav["desc"]}">i</span>', unsafe_allow_html=True)
     
-    if st.sidebar.button("Executive Dashboard", use_container_width=True):
-        st.session_state.page = "general_overview"
-        st.rerun()
-    
-
-    
-    if st.sidebar.button("Marketing Operations", use_container_width=True):
-        st.session_state.page = "marketing_operations"
-        st.rerun()
-    
-    if st.sidebar.button("Content Performance", use_container_width=True):
-        st.session_state.page = "content_performance_growth"
-        st.rerun()
-    
-    if st.sidebar.button("Leads & Activation", use_container_width=True):
-        st.session_state.page = "leads_activation"
-        st.rerun()
-    if st.sidebar.button("Data Inspector", use_container_width=True):
-        st.session_state.page = "data_inspector"
-        st.rerun()
     st.sidebar.markdown("---")
 
 
@@ -564,18 +688,144 @@ def create_navigation_sidebar():
     
     st.sidebar.header("Navegación")
     
-    # Botones de navegación
-    if st.sidebar.button("Página Principal", use_container_width=True):
-        st.session_state.page = "dashboard"
-        st.rerun()
+    # Estilos CSS para botones de navegación (ANTES de renderizar los botones)
+    st.sidebar.markdown("""
+    <style>
+    /* Estilo base para botones de navegación en sidebar */
+    section[data-testid="stSidebar"] .stButton > button {
+        background: #1a1a1a !important;
+        color: white !important;
+        border: 1px solid #3a3a3a !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1rem !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+        background-image: none !important;
+    }
     
-    if st.sidebar.button("Executive Dashboard", use_container_width=True):
-        st.session_state.page = "general_overview"
-        st.rerun()
+    /* Espacio entre botones de navegación */
+    section[data-testid="stSidebar"] .stButton {
+        margin-bottom: 0.35rem !important;
+    }
     
-    if st.sidebar.button("Tables", use_container_width=True):
-        st.session_state.page = "tables"
-        st.rerun()
+    /* Hover - igual que página activa: fondo claro, borde claro, letras negras */
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        background: #CDE3DE !important;
+        color: #000000 !important;
+        border: 2px solid #6CA8A4 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 8px rgba(108, 168, 164, 0.4) !important;
+    }
+    
+    /* Focus state también con estilo claro */
+    section[data-testid="stSidebar"] .stButton > button:focus {
+        background: #CDE3DE !important;
+        color: #000000 !important;
+        border: 2px solid #6CA8A4 !important;
+        box-shadow: 0 0 0 2px rgba(108, 168, 164, 0.3) !important;
+    }
+    
+    /* Active/pressed state */
+    section[data-testid="stSidebar"] .stButton > button:active {
+        background: #A7C9C6 !important;
+        color: #000000 !important;
+        border: 2px solid #6CA8A4 !important;
+        transform: translateY(0) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Obtener página actual
+    current_page = st.session_state.get("page", "general_overview")
+    
+    # Definir páginas de navegación con descripciones
+    nav_pages = [
+        {
+            "page": "general_overview", 
+            "label": "Tráfico General",
+            "desc": "Visión general del tráfico web, métricas de visitas, usuarios y tendencias principales"
+        },
+        {
+            "page": "traffic_sources", 
+            "label": "Fuentes de Tráfico",
+            "desc": "Análisis de canales de adquisición: orgánico, directo, referral, social y campañas"
+        },
+        {
+            "page": "content_performance", 
+            "label": "Página y Contenido",
+            "desc": "Rendimiento de páginas, contenido más visitado y métricas de engagement"
+        },
+        {
+            "page": "user_behavior", 
+            "label": "Comportamiento Usuarios",
+            "desc": "Patrones de navegación, tiempo en página, rebote y recorridos de usuario"
+        },
+        {
+            "page": "alerts", 
+            "label": "Alertas",
+            "desc": "Sistema de alertas y notificaciones sobre cambios significativos en métricas"
+        },
+    ]
+    
+    # CSS para el icono de información
+    st.sidebar.markdown("""
+    <style>
+    .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background: #3a3a3a;
+        color: #999;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: help;
+        transition: all 0.2s ease;
+        font-style: italic;
+        font-family: Georgia, serif;
+        margin-top: 5px;
+        vertical-align: middle;
+    }
+    .info-icon:hover {
+        background: #6CA8A4;
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Renderizar botones de navegación con estilo condicional
+    for i, nav in enumerate(nav_pages):
+        is_active = current_page == nav["page"]
+        
+        # Usar columnas consistentes para todos los botones
+        col1, col2 = st.sidebar.columns([0.88, 0.12])
+        
+        with col1:
+            if is_active:
+                # Botón activo como HTML con mismo espaciado
+                st.markdown(f"""
+                <div style="
+                    background: #CDE3DE;
+                    color: #000000;
+                    border: 2px solid #6CA8A4;
+                    border-radius: 8px;
+                    padding: 0.6rem 1rem;
+                    font-weight: 600;
+                    text-align: center;
+                    cursor: default;
+                    margin-bottom: 1rem;
+                ">{nav["label"]}</div>
+                """, unsafe_allow_html=True)
+            else:
+                # Botón normal
+                if st.button(nav["label"], use_container_width=True, key=f"nav2_{i}"):
+                    st.session_state.page = nav["page"]
+                    st.rerun()
+        
+        with col2:
+            st.markdown(f'<span class="info-icon" title="{nav["desc"]}">i</span>', unsafe_allow_html=True)
     
     # Información del proyecto
     st.sidebar.markdown("---")
