@@ -23,6 +23,9 @@ plotly>=5.17.0
 # Production Server
 gunicorn==21.2.0
 
+# HTTP Requests (Apollo API)
+requests>=2.31.0
+
 # Utilities
 python-dateutil==2.8.2
 python-dotenv==1.0.0

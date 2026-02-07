@@ -38,8 +38,8 @@ GA4_CONFIG = {
 # =============================================================================
 
 DIANA_CONFIG = {
-    "api_key": os.getenv("DIANA_API_KEY", ""),  # Configurar en variables de entorno
-    "api_url": "https://api.diana.io/v1",  # URL de la API de Diana
+    "api_key": os.getenv("APOLLO_API_KEY", ""),
+    "api_url": "https://api.apollo.io/api/v1",
     "timeout": 30
 }
 

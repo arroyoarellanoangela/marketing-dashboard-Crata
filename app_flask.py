@@ -22,6 +22,10 @@ import hashlib
 import re
 import threading
 import time
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Importar configuraciones (importar directamente del archivo para evitar imports de Streamlit)
 import sys
@@ -53,6 +57,7 @@ spec_settings.loader.exec_module(settings_module)
 
 DATA_SETS_CONFIG = settings_module.DATA_SETS_CONFIG
 GA4_CONFIG = settings_module.GA4_CONFIG
+DIANA_CONFIG = settings_module.DIANA_CONFIG
 
 app = Flask(__name__, 
             template_folder='templates',
@@ -2983,24 +2988,102 @@ def debug_data_status():
         }), 500
 
 # =============================================================================
-# API: DIANA - MÉTRICAS DE MENSAJERÍA (DATOS DE EJEMPLO)
+# API: DIANA - APOLLO.IO INTEGRATION
 # =============================================================================
+
+def _apollo_headers():
+    """Returns headers for Apollo API requests."""
+    api_key = DIANA_CONFIG.get('api_key') or os.getenv('APOLLO_API_KEY', '')
+    return {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'X-Api-Key': api_key
+    }
+
+def get_apollo_emails(fecha_inicio, fecha_fin):
+    """Fetches email messages from Apollo emailer_messages/search API.
+    Returns (messages_list, error_string_or_None).
+    """
+    api_url = DIANA_CONFIG.get('api_url', 'https://api.apollo.io/api/v1')
+    url = f"{api_url}/emailer_messages/search"
+    timeout = DIANA_CONFIG.get('timeout', 30)
+    all_messages = []
+    page = 1
+
+    while True:
+        payload = {
+            'page': page,
+            'per_page': 100
+        }
+        if fecha_inicio:
+            payload['created_at_gte'] = fecha_inicio
+        if fecha_fin:
+            payload['created_at_lte'] = fecha_fin
+
+        try:
+            resp = requests.post(url, json=payload, headers=_apollo_headers(), timeout=timeout)
+            resp.raise_for_status()
+            data = resp.json()
+        except requests.exceptions.RequestException as e:
+            return all_messages, f"Apollo emails API error: {str(e)}"
+
+        batch = data.get('emailer_messages', [])
+        if not batch:
+            break
+        all_messages.extend(batch)
+
+        # Stop if we got fewer results than requested (last page)
+        if len(batch) < 100:
+            break
+        page += 1
+        # Safety cap to avoid infinite loops
+        if page > 20:
+            break
+
+    return all_messages, None
+
+def get_apollo_contacts():
+    """Fetches contacts/leads from Apollo mixed_people/search API.
+    Returns (contacts_list, error_string_or_None).
+    """
+    api_url = DIANA_CONFIG.get('api_url', 'https://api.apollo.io/api/v1')
+    url = f"{api_url}/mixed_people/search"
+    timeout = DIANA_CONFIG.get('timeout', 30)
+
+    payload = {
+        'page': 1,
+        'per_page': 50
+    }
+
+    try:
+        resp = requests.post(url, json=payload, headers=_apollo_headers(), timeout=timeout)
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.exceptions.RequestException as e:
+        return [], f"Apollo contacts API error: {str(e)}"
+
+    return data.get('people', []), None
+
 
 @app.route('/api/get-diana-data', methods=['POST'])
 def get_diana_data():
-    """Obtiene datos de Diana (mensajes enviados, respuestas, leads, reuniones) - Datos de ejemplo"""
+    """Obtiene datos de Diana usando la API real de Apollo.io"""
     try:
         data = request.get_json() or {}
         fecha_inicio = data.get('fecha_inicio')
         fecha_fin = data.get('fecha_fin')
-        
-        print(f"[DIANA] Solicitando datos: {fecha_inicio} - {fecha_fin}")
-        
-        # DATOS DE EJEMPLO - Simular métricas de Apollo
-        from datetime import datetime, timedelta
-        import random
-        
-        # Calcular días del período
+
+        print(f"[DIANA] Solicitando datos Apollo: {fecha_inicio} - {fecha_fin}")
+
+        # Validate API key
+        api_key = DIANA_CONFIG.get('api_key') or os.getenv('APOLLO_API_KEY', '')
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'APOLLO_API_KEY not configured. Set it in .env or environment variables.'
+            }), 400
+
+        # Date range setup
         if fecha_inicio and fecha_fin:
             fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d')
             fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d')
@@ -3009,74 +3092,74 @@ def get_diana_data():
             dias = 7
             fecha_inicio_dt = datetime.now() - timedelta(days=7)
             fecha_fin_dt = datetime.now()
-        
-        # Generar datos de ejemplo para el período actual
-        messages_sent = random.randint(150, 300) * (dias // 7 + 1)
-        messages_replied = int(messages_sent * random.uniform(0.25, 0.45))
+            fecha_inicio = fecha_inicio_dt.strftime('%Y-%m-%d')
+            fecha_fin = fecha_fin_dt.strftime('%Y-%m-%d')
+
+        # Previous period for delta calculations
+        prev_inicio_dt = fecha_inicio_dt - timedelta(days=dias)
+        prev_fin_dt = fecha_inicio_dt - timedelta(days=1)
+        prev_inicio = prev_inicio_dt.strftime('%Y-%m-%d')
+        prev_fin = prev_fin_dt.strftime('%Y-%m-%d')
+
+        # ── Fetch emails from Apollo (current + previous period) ──
+        apollo_emails, email_error = get_apollo_emails(fecha_inicio, fecha_fin)
+        apollo_emails_prev, _ = get_apollo_emails(prev_inicio, prev_fin)
+
+        if email_error:
+            print(f"[DIANA] Warning: {email_error}")
+
+        # ── Fetch contacts/leads from Apollo ──
+        apollo_contacts, contacts_error = get_apollo_contacts()
+        if contacts_error:
+            print(f"[DIANA] Warning: {contacts_error}")
+
+        # ── Build KPIs from real data ──
+        messages_sent = len(apollo_emails)
+        messages_replied = sum(1 for m in apollo_emails if m.get('is_replied'))
         response_rate = (messages_replied / messages_sent * 100) if messages_sent > 0 else 0
-        avg_response_time = random.randint(2, 48) * 3600  # Entre 2 y 48 horas en segundos
-        
-        # Período anterior para calcular deltas
-        periodo_anterior_dias = dias
-        messages_sent_prev = int(messages_sent * random.uniform(0.85, 1.15))
-        messages_replied_prev = int(messages_sent_prev * random.uniform(0.20, 0.40))
+
+        # Average response time (from emails that have reply timestamps)
+        response_times = []
+        for m in apollo_emails:
+            if m.get('is_replied') and m.get('replied_at') and m.get('created_at'):
+                try:
+                    created = datetime.fromisoformat(m['created_at'].replace('Z', '+00:00'))
+                    replied = datetime.fromisoformat(m['replied_at'].replace('Z', '+00:00'))
+                    diff = (replied - created).total_seconds()
+                    if diff > 0:
+                        response_times.append(diff)
+                except (ValueError, TypeError):
+                    pass
+        avg_response_time = int(sum(response_times) / len(response_times)) if response_times else 0
+
+        # Previous period KPIs for deltas
+        messages_sent_prev = len(apollo_emails_prev)
+        messages_replied_prev = sum(1 for m in apollo_emails_prev if m.get('is_replied'))
         response_rate_prev = (messages_replied_prev / messages_sent_prev * 100) if messages_sent_prev > 0 else 0
-        avg_response_time_prev = random.randint(3, 50) * 3600
-        
-        # Calcular deltas
+
+        response_times_prev = []
+        for m in apollo_emails_prev:
+            if m.get('is_replied') and m.get('replied_at') and m.get('created_at'):
+                try:
+                    created = datetime.fromisoformat(m['created_at'].replace('Z', '+00:00'))
+                    replied = datetime.fromisoformat(m['replied_at'].replace('Z', '+00:00'))
+                    diff = (replied - created).total_seconds()
+                    if diff > 0:
+                        response_times_prev.append(diff)
+                except (ValueError, TypeError):
+                    pass
+        avg_response_time_prev = int(sum(response_times_prev) / len(response_times_prev)) if response_times_prev else 0
+
+        # Calculate deltas
         messages_sent_delta = ((messages_sent - messages_sent_prev) / messages_sent_prev * 100) if messages_sent_prev > 0 else 0
         messages_replied_delta = ((messages_replied - messages_replied_prev) / messages_replied_prev * 100) if messages_replied_prev > 0 else 0
         response_rate_delta = response_rate - response_rate_prev
         avg_response_time_delta = ((avg_response_time - avg_response_time_prev) / avg_response_time_prev * 100) if avg_response_time_prev > 0 else 0
-        
-        # Generar datos diarios para gráficos
-        messages_by_day = []
-        response_rate_by_day = []
-        current_date = fecha_inicio_dt
-        
-        while current_date <= fecha_fin_dt:
-            day_messages = random.randint(15, 45)
-            day_replied = int(day_messages * random.uniform(0.20, 0.50))
-            day_rate = (day_replied / day_messages * 100) if day_messages > 0 else 0
-            
-            messages_by_day.append({
-                'date': current_date.strftime('%Y-%m-%d'),
-                'value': day_messages
-            })
-            
-            response_rate_by_day.append({
-                'date': current_date.strftime('%Y-%m-%d'),
-                'value': round(day_rate, 1)
-            })
-            
-            current_date += timedelta(days=1)
-        
-        # Generar mensajes recientes de ejemplo
-        messages = []
-        nombres = ['John Smith', 'Maria Garcia', 'David Johnson', 'Sarah Williams', 'Michael Brown', 
-                  'Emily Davis', 'James Wilson', 'Lisa Anderson', 'Robert Taylor', 'Jennifer Martinez']
-        empresas = ['Tech Corp', 'Digital Solutions', 'Innovation Labs', 'Global Systems', 'Future Tech',
-                   'Smart Solutions', 'NextGen Inc', 'Cloud Services', 'Data Analytics', 'AI Ventures']
-        
-        for i in range(min(20, messages_sent)):
-            fecha_msg = fecha_fin_dt - timedelta(days=random.randint(0, dias-1), hours=random.randint(0, 23))
-            replied = random.random() < 0.35  # 35% de probabilidad de respuesta
-            response_time = random.randint(1, 72) * 3600 if replied else None
-            
-            messages.append({
-                'date': fecha_msg.isoformat(),
-                'created_at': fecha_msg.isoformat(),
-                'recipient': random.choice(nombres),
-                'to': f"{random.choice(nombres).lower().replace(' ', '.')}@{random.choice(empresas).lower().replace(' ', '')}.com",
-                'subject': f"Follow-up: {random.choice(['Partnership', 'Product Demo', 'Collaboration', 'Opportunity', 'Meeting'])}",
-                'title': f"Follow-up: {random.choice(['Partnership', 'Product Demo', 'Collaboration', 'Opportunity', 'Meeting'])}",
-                'replied': replied,
-                'response_time': response_time
-            })
-        
-        # Ordenar mensajes por fecha (más recientes primero)
-        messages.sort(key=lambda x: x['date'], reverse=True)
-        
+
+        # Leads & meetings from Apollo data
+        leads_generated = len(apollo_contacts)
+        leads_delta = 0  # No previous-period contact search available
+
         kpis = {
             'messages_sent': messages_sent,
             'messages_sent_delta': round(messages_sent_delta, 1),
@@ -3085,147 +3168,173 @@ def get_diana_data():
             'response_rate': round(response_rate, 1),
             'response_rate_delta': round(response_rate_delta, 1),
             'avg_response_time': avg_response_time,
-            'avg_response_time_delta': round(avg_response_time_delta, 1)
+            'avg_response_time_delta': round(avg_response_time_delta, 1),
+            'leads_generated': leads_generated,
+            'leads_generated_delta': round(leads_delta, 1),
+            'meetings_scheduled': 0,
+            'meetings_scheduled_delta': 0
         }
-        
+
+        # ── Build daily charts from real email data ──
+        daily_sent = {}
+        daily_replied = {}
+        for m in apollo_emails:
+            created_at = m.get('created_at', '')
+            try:
+                day = created_at[:10]  # YYYY-MM-DD
+                if day:
+                    daily_sent[day] = daily_sent.get(day, 0) + 1
+                    if m.get('is_replied'):
+                        daily_replied[day] = daily_replied.get(day, 0) + 1
+            except (IndexError, TypeError):
+                pass
+
+        # Fill in all days in the range
+        messages_by_day = []
+        response_rate_by_day = []
+        current_date = fecha_inicio_dt
+        while current_date <= fecha_fin_dt:
+            day_str = current_date.strftime('%Y-%m-%d')
+            sent_count = daily_sent.get(day_str, 0)
+            replied_count = daily_replied.get(day_str, 0)
+            day_rate = (replied_count / sent_count * 100) if sent_count > 0 else 0
+
+            messages_by_day.append({'date': day_str, 'value': sent_count})
+            response_rate_by_day.append({'date': day_str, 'value': round(day_rate, 1)})
+            current_date += timedelta(days=1)
+
         charts = {
             'messages_by_day': messages_by_day,
             'response_rate_by_day': response_rate_by_day
         }
-        
-        # Agregar leads generados y reuniones agendadas
-        leads_generated = int(messages_replied * random.uniform(0.15, 0.30))  # 15-30% de respuestas se convierten en leads
-        meetings_scheduled = int(leads_generated * random.uniform(0.20, 0.40))  # 20-40% de leads agendan reunión
-        
-        # Calcular deltas para leads y reuniones
-        leads_prev = int(messages_replied_prev * random.uniform(0.12, 0.28))
-        meetings_prev = int(leads_prev * random.uniform(0.18, 0.38))
-        leads_delta = ((leads_generated - leads_prev) / leads_prev * 100) if leads_prev > 0 else 0
-        meetings_delta = ((meetings_scheduled - meetings_prev) / meetings_prev * 100) if meetings_prev > 0 else 0
-        
-        kpis['leads_generated'] = leads_generated
-        kpis['leads_generated_delta'] = round(leads_delta, 1)
-        kpis['meetings_scheduled'] = meetings_scheduled
-        kpis['meetings_scheduled_delta'] = round(meetings_delta, 1)
-        
-        # Generar datos de Diana Leads (perfiles targeteados) basados en los outputs reales
-        diana_leads = []
-        titulos = ['Director IT Agile PMO', 'Head of Artificial Intelligence', 'Director de arte', 
-                  'Co-CEO & Founder', 'Head of Big Data & Analytics', 'Director Comercial',
-                  'Director de Planta', 'Ingeniero Industrial', 'Ingeniera Química', 'Executive Director']
-        industrias = ['Pharmaceuticals', 'Technology', 'Construction', 'Banking', 'Food Industry',
-                     'Legal', 'Education', 'Healthcare', 'Hospitality', 'Manufacturing']
-        paises = ['Spain', 'Portugal', 'France', 'Germany', 'UK']
-        headlines = [
-            'Director IT Agile PMO | Portfolio & Digital Transformation Expert | Ex-Airbus | Clarity PPM | PowerBI | Agile | Lean | Strategic Execution',
-            'Head of Artificial Intelligence at ISDIN | Technology Innovation Leader | AI, Engineering & Digital Transformation',
-            'Co-CEO & Founder of Grupo Construcía | Enterpreneur | Circular Economy | Construction',
-            'Head of Big Data & Analytics | AI - MIAX | Cloud & Data Architect | Digital Transformation in Banking',
-            'Director de Planta | Producción de Harina de Grano Entero | Innovación, Calidad y Sostenibilidad en la Industria Alimentaria',
-            'Ingeniero Industrial y comercial. Especialista en Automatización, i4.0 y ciberseguridad',
-            'Industria Farmacéutica | Director comercial / Customer Experience Lead | Estrategia | Ventas | Liderazgo',
-            'Ph.D Chemistry | Plant Director | Leader in Operational and Productive Optimization | Continuos Improvement, Kaizen, 5S',
-            'Executive Director Industrial Transformation Nitrogen Value Chain Ammonium Nitrate | Trading Hub | M&A | Sustainability'
-        ]
-        
-        # Generar leads individuales
-        for i in range(30):
-            diana_leads.append({
-                'name': random.choice(nombres),
-                'title': random.choice(titulos),
-                'company': random.choice(empresas),
-                'industry': random.choice(industrias),
-                'country': random.choice(paises),
-                'headline': random.choice(headlines),
-                'linkedin_url': f"https://linkedin.com/in/{random.choice(nombres).lower().replace(' ', '-')}",
-                'match_score': random.randint(75, 100),
-                'last_contacted': (fecha_fin_dt - timedelta(days=random.randint(0, 30))).strftime('%Y-%m-%d')
+
+        # ── Build messages table from real email data ──
+        messages = []
+        for m in apollo_emails:
+            contact = m.get('contact', {}) or {}
+            is_replied = m.get('is_replied', False)
+            resp_time = None
+            if is_replied and m.get('replied_at') and m.get('created_at'):
+                try:
+                    created = datetime.fromisoformat(m['created_at'].replace('Z', '+00:00'))
+                    replied_dt = datetime.fromisoformat(m['replied_at'].replace('Z', '+00:00'))
+                    resp_time = int((replied_dt - created).total_seconds())
+                except (ValueError, TypeError):
+                    pass
+
+            messages.append({
+                'date': m.get('created_at', ''),
+                'created_at': m.get('created_at', ''),
+                'recipient': contact.get('name', m.get('to_name', '')),
+                'to': m.get('to', contact.get('email', '')),
+                'subject': m.get('subject', ''),
+                'title': m.get('subject', ''),
+                'replied': is_replied,
+                'response_time': resp_time
             })
-        
-        # Generar resumen de Top 3 Targets
-        # Agrupar por industria, país y tipo para encontrar los más comunes
-        industries_count = Counter([lead['industry'] for lead in diana_leads])
-        countries_count = Counter([lead['country'] for lead in diana_leads])
-        titles_count = Counter([lead['title'] for lead in diana_leads])
-        
-        top_industry = industries_count.most_common(1)[0][0] if industries_count else 'N/A'
-        top_country = countries_count.most_common(1)[0][0] if countries_count else 'N/A'
-        top_title = titles_count.most_common(1)[0][0] if titles_count else 'N/A'
-        
-        # Seleccionar Top 3 targets (los de mayor match_score)
-        top_3_targets = sorted(diana_leads, key=lambda x: x['match_score'], reverse=True)[:3]
-        
-        # Si no hay suficientes, generar algunos más
-        if len(top_3_targets) < 3:
-            for i in range(3 - len(top_3_targets)):
-                top_3_targets.append({
-                    'type': random.choice(titulos),
-                    'industry': top_industry,
-                    'country': top_country,
-                    'headline': random.choice(headlines),
-                    'match_score': random.randint(85, 100)
+
+        messages.sort(key=lambda x: x.get('date', ''), reverse=True)
+
+        # ── Build diana_leads from real Apollo contacts ──
+        diana_leads = []
+        for p in apollo_contacts:
+            org = p.get('organization', {}) or {}
+            diana_leads.append({
+                'name': p.get('name', ''),
+                'title': p.get('title', ''),
+                'company': org.get('name', p.get('organization_name', '')),
+                'industry': org.get('industry', ''),
+                'country': p.get('country', ''),
+                'headline': p.get('headline', p.get('title', '')),
+                'linkedin_url': p.get('linkedin_url', ''),
+                'match_score': p.get('score', 0) or 0,
+                'last_contacted': p.get('last_contacted_at', '')
+            })
+
+        # ── Build targets summary from real leads ──
+        if diana_leads:
+            industries_count = Counter([l['industry'] for l in diana_leads if l['industry']])
+            countries_count = Counter([l['country'] for l in diana_leads if l['country']])
+            titles_count = Counter([l['title'] for l in diana_leads if l['title']])
+
+            top_industry = industries_count.most_common(1)[0][0] if industries_count else 'N/A'
+            top_country = countries_count.most_common(1)[0][0] if countries_count else 'N/A'
+            top_title = titles_count.most_common(1)[0][0] if titles_count else 'N/A'
+
+            top_3_targets = sorted(diana_leads, key=lambda x: x.get('match_score', 0), reverse=True)[:3]
+
+            top_3_list = []
+            for t in top_3_targets:
+                top_3_list.append({
+                    'type': t.get('title', 'N/A'),
+                    'industry': t.get('industry', 'N/A'),
+                    'country': t.get('country', 'N/A'),
+                    'headline': t.get('headline', ''),
+                    'match_score': t.get('match_score', 0)
                 })
-        
-        targets_summary = {
-            'top_3': [
-                {
-                    'type': top_3_targets[0].get('title', top_3_targets[0].get('type', 'Director')),
-                    'industry': top_3_targets[0].get('industry', top_industry),
-                    'country': top_3_targets[0].get('country', top_country),
-                    'headline': top_3_targets[0].get('headline', random.choice(headlines)),
-                    'match_score': top_3_targets[0].get('match_score', 95)
-                },
-                {
-                    'type': top_3_targets[1].get('title', top_3_targets[1].get('type', 'Head of')) if len(top_3_targets) > 1 else random.choice(titulos),
-                    'industry': top_3_targets[1].get('industry', industries_count.most_common(2)[1][0] if len(industries_count) > 1 else top_industry) if len(top_3_targets) > 1 else top_industry,
-                    'country': top_3_targets[1].get('country', top_country) if len(top_3_targets) > 1 else top_country,
-                    'headline': top_3_targets[1].get('headline', random.choice(headlines)) if len(top_3_targets) > 1 else random.choice(headlines),
-                    'match_score': top_3_targets[1].get('match_score', 92) if len(top_3_targets) > 1 else 92
-                },
-                {
-                    'type': top_3_targets[2].get('title', top_3_targets[2].get('type', 'Director')) if len(top_3_targets) > 2 else random.choice(titulos),
-                    'industry': top_3_targets[2].get('industry', industries_count.most_common(3)[2][0] if len(industries_count) > 2 else top_industry) if len(top_3_targets) > 2 else top_industry,
-                    'country': top_3_targets[2].get('country', top_country) if len(top_3_targets) > 2 else top_country,
-                    'headline': top_3_targets[2].get('headline', random.choice(headlines)) if len(top_3_targets) > 2 else random.choice(headlines),
-                    'match_score': top_3_targets[2].get('match_score', 90) if len(top_3_targets) > 2 else 90
+
+            targets_summary = {
+                'top_3': top_3_list,
+                'stats': {
+                    'top_industry': top_industry,
+                    'top_industry_count': industries_count.get(top_industry, 0),
+                    'top_country': top_country,
+                    'top_country_count': countries_count.get(top_country, 0),
+                    'top_type': top_title,
+                    'top_type_count': titles_count.get(top_title, 0),
+                    'total_leads': len(diana_leads)
                 }
-            ],
-            'stats': {
-                'top_industry': top_industry,
-                'top_industry_count': industries_count[top_industry] if top_industry in industries_count else len(diana_leads),
-                'top_country': top_country,
-                'top_country_count': countries_count[top_country] if top_country in countries_count else len(diana_leads),
-                'top_type': top_title,
-                'top_type_count': titles_count[top_title] if top_title in titles_count else len(diana_leads),
-                'total_leads': len(diana_leads)
             }
-        }
-        
-        print(f"[DIANA] Datos generados - Mensajes: {messages_sent}, Respuestas: {messages_replied}, Leads: {leads_generated}, Reuniones: {meetings_scheduled}")
-        
-        # Obtener reuniones manuales de la base de datos
+        else:
+            targets_summary = {
+                'top_3': [],
+                'stats': {
+                    'top_industry': 'N/A', 'top_industry_count': 0,
+                    'top_country': 'N/A', 'top_country_count': 0,
+                    'top_type': 'N/A', 'top_type_count': 0,
+                    'total_leads': 0
+                }
+            }
+
+        # ── Manual meetings from SQLite (unchanged) ──
         manual_meetings = get_diana_meetings()
         manual_meetings_count = len(manual_meetings)
-        
-        # Sumar reuniones manuales a las reuniones calculadas
-        total_meetings = meetings_scheduled + manual_meetings_count
-        kpis['meetings_scheduled'] = total_meetings
-        
+        kpis['meetings_scheduled'] = manual_meetings_count
+
+        print(f"[DIANA] Apollo data - Sent: {messages_sent}, Replied: {messages_replied}, Leads: {leads_generated}, Meetings: {manual_meetings_count}")
+
         return jsonify({
             'success': True,
             'kpis': kpis,
             'charts': charts,
-            'messages': messages[:20],  # Los 20 más recientes para la tabla
+            'messages': messages[:20],
             'diana_leads': diana_leads,
             'targets_summary': targets_summary,
             'manual_meetings': manual_meetings
         })
-        
+
     except Exception as e:
         print(f"[ERROR] Error en get_diana_data: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        # Fallback: return empty data with error message (no fake data)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'kpis': {
+                'messages_sent': 0, 'messages_sent_delta': 0,
+                'messages_replied': 0, 'messages_replied_delta': 0,
+                'response_rate': 0, 'response_rate_delta': 0,
+                'avg_response_time': 0, 'avg_response_time_delta': 0,
+                'leads_generated': 0, 'leads_generated_delta': 0,
+                'meetings_scheduled': 0, 'meetings_scheduled_delta': 0
+            },
+            'charts': {'messages_by_day': [], 'response_rate_by_day': []},
+            'messages': [],
+            'diana_leads': [],
+            'targets_summary': {'top_3': [], 'stats': {}},
+            'manual_meetings': []
+        }), 500
 
 # =============================================================================
 # API: DIANA - REUNIONES MANUALES
