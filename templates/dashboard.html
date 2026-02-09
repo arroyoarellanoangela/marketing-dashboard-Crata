@@ -2584,6 +2584,10 @@
                 <span>Diana</span>
             </a>
             
+            <a href="/apollo" class="nav-item {{ 'active' if active_page == 'apollo' else '' }}" title="Apollo.io - Datos crudos de la API, contactos y emails.">
+                <span>Apollo</span>
+            </a>
+
             <a href="/leads" class="nav-item {{ 'active' if active_page == 'leads' else '' }}" title="Gestión centralizada de leads de todas las fuentes.">
                 <span>Leads</span>
             </a>
@@ -3555,6 +3559,135 @@
             </div>
         </div>
         
+        {% elif active_page == 'apollo' %}
+        <!-- Apollo Page - Raw API Data -->
+        <div class="apollo-container">
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="apollo-status">API Status</button>
+                <button class="tab-btn" data-tab="apollo-contacts">Contactos</button>
+                <button class="tab-btn" data-tab="apollo-emails">Emails</button>
+            </div>
+
+            <div>
+                <!-- TAB 1: API STATUS -->
+                <div class="tab-content active" id="apollo-status">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; margin-bottom: 1rem;">
+                        <div class="section-header kpis-header" style="margin:0;">
+                            <h2 class="section-title small">ESTADO DE CONEXIÓN APOLLO.IO</h2>
+                        </div>
+                        <button id="apollo-test-btn" onclick="loadApolloData()" style="padding: 0.6rem 1.2rem; background: #6CA8A4; border: none; border-radius: 4px; color: white; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.85rem;">Test Connection</button>
+                    </div>
+
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-header"><span class="kpi-title">API Key</span></div>
+                            <div class="kpi-value-row">
+                                <div class="kpi-value" id="apollo-key-status" style="font-size: 1.2rem;">--</div>
+                            </div>
+                            <p class="kpi-subtitle" id="apollo-key-masked">Verificando...</p>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-header"><span class="kpi-title">People Endpoint</span></div>
+                            <div class="kpi-value-row">
+                                <div class="kpi-value" id="apollo-people-status" style="font-size: 1.2rem;">--</div>
+                            </div>
+                            <p class="kpi-subtitle" id="apollo-people-detail">Verificando...</p>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-header"><span class="kpi-title">Emails Endpoint</span></div>
+                            <div class="kpi-value-row">
+                                <div class="kpi-value" id="apollo-emails-status" style="font-size: 1.2rem;">--</div>
+                            </div>
+                            <p class="kpi-subtitle" id="apollo-emails-detail">Verificando...</p>
+                        </div>
+                    </div>
+
+                    <!-- Endpoint Details -->
+                    <div style="margin-top: 2rem;">
+                        <div class="section-header kpis-header"><h2 class="section-title small">DETALLE DE ENDPOINTS</h2></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                            <div class="kpi-card">
+                                <h3 style="color: #6CA8A4; margin-bottom: 1rem; font-size: 0.95rem;">mixed_people/api_search</h3>
+                                <div id="apollo-people-details">
+                                    <p style="color: rgba(255,255,255,0.5);">Esperando test...</p>
+                                </div>
+                            </div>
+                            <div class="kpi-card">
+                                <h3 style="color: #6CA8A4; margin-bottom: 1rem; font-size: 0.95rem;">emailer_messages/search</h3>
+                                <div id="apollo-emails-details">
+                                    <p style="color: rgba(255,255,255,0.5);">Esperando test...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raw JSON Preview -->
+                    <div style="margin-top: 2rem;">
+                        <div class="section-header kpis-header"><h2 class="section-title small">RAW JSON PREVIEW</h2></div>
+                        <div class="kpi-card" style="margin-top: 1rem;">
+                            <pre id="apollo-raw-json" style="color: rgba(255,255,255,0.7); font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap; max-height: 400px; overflow-y: auto;">Esperando test...</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: CONTACTOS -->
+                <div class="tab-content" id="apollo-contacts">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; margin-bottom: 1rem;">
+                        <div class="section-header kpis-header" style="margin:0;">
+                            <h2 class="section-title small">CONTACTOS APOLLO (<span id="apollo-contacts-count">0</span>)</h2>
+                        </div>
+                    </div>
+                    <div class="kpi-card" style="padding: 0; overflow: hidden;">
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Título</th>
+                                        <th>Empresa</th>
+                                        <th>Industria</th>
+                                        <th>País</th>
+                                        <th>Email</th>
+                                        <th>LinkedIn</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="apollo-contacts-table">
+                                    <tr><td colspan="7" style="text-align:center; color: rgba(255,255,255,0.5);">Cargando datos...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: EMAILS -->
+                <div class="tab-content" id="apollo-emails">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; margin-bottom: 1rem;">
+                        <div class="section-header kpis-header" style="margin:0;">
+                            <h2 class="section-title small">EMAILS APOLLO (<span id="apollo-emails-count">0</span>)</h2>
+                        </div>
+                    </div>
+                    <div class="kpi-card" style="padding: 0; overflow: hidden;">
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Destinatario</th>
+                                        <th>Asunto</th>
+                                        <th>Estado</th>
+                                        <th>Respondido</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="apollo-emails-table">
+                                    <tr><td colspan="5" style="text-align:center; color: rgba(255,255,255,0.5);">Cargando datos...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {% elif active_page == 'leads' %}
         <!-- Leads Page - Pipeline View -->
         <div class="leads-container">
@@ -5486,6 +5619,13 @@
             }, 500);
         }
         
+        if (window.activePage === 'apollo') {
+            setTimeout(async () => {
+                console.log('[INIT] Cargando datos de Apollo...');
+                await loadApolloData();
+            }, 500);
+        }
+
         if (window.activePage === 'leads') {
             setTimeout(async () => {
                 console.log('[INIT] Cargando datos de Leads...');
@@ -5683,23 +5823,31 @@
     // Load dashboard data (solo carga KPIs, NO recarga datos de GA)
     async function loadDashboardData() {
         console.log('[LOAD] Iniciando loadDashboardData, activePage:', window.activePage);
+
+        // Pages that don't need GA4 data skip the check entirely
+        const independentPages = ['apollo', 'diana', 'leads', 'team'];
+        if (independentPages.includes(window.activePage)) {
+            console.log('[LOAD] Página independiente de GA4, skip check');
+            return;
+        }
+
         showLoading(true);
-        
+
         try {
             // Verificar si los datos ya están cargados
             const dataLoaded = await checkDataLoaded();
             console.log('[LOAD] Datos cargados:', dataLoaded);
-            
+
             if (!dataLoaded) {
                 // Mostrar mensaje y redirigir al inicio para cargar datos
                 showNoDataMessage();
                 return;
             }
-            
+
             // Los datos ya están cargados, solo calcular KPIs con el filtro actual
             const { startDate, endDate } = getDateRange();
             await loadKPIs(startDate, endDate);
-            
+
         } catch (error) {
             console.error('Error:', error);
         } finally {
@@ -7020,6 +7168,172 @@
     // Esperar a que el DOM esté listo y añadir listener
     // El botón de filtros se maneja en window.applyFilters (definido arriba)
     
+    // ===== APOLLO PAGE =====
+    async function loadApolloData() {
+        console.log('[APOLLO] Cargando datos de Apollo...');
+        const btn = document.getElementById('apollo-test-btn');
+        if (btn) { btn.textContent = 'Testing...'; btn.disabled = true; }
+
+        try {
+            const response = await fetch('/api/get-apollo-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await response.json();
+            console.log('[APOLLO] Respuesta:', data);
+
+            if (data.success) {
+                updateApolloStatus(data);
+                updateApolloContacts(data.endpoints.people);
+                updateApolloEmails(data.endpoints.emails);
+            }
+        } catch (error) {
+            console.error('[APOLLO] Error:', error);
+            const el = document.getElementById('apollo-key-status');
+            if (el) { el.textContent = 'ERROR'; el.style.color = '#ff6b6b'; }
+        } finally {
+            if (btn) { btn.textContent = 'Test Connection'; btn.disabled = false; }
+        }
+    }
+
+    function updateApolloStatus(data) {
+        const conn = data.connection;
+        const people = data.endpoints.people;
+        const emails = data.endpoints.emails;
+
+        // API Key status
+        const keyEl = document.getElementById('apollo-key-status');
+        const keyMasked = document.getElementById('apollo-key-masked');
+        if (keyEl) {
+            keyEl.textContent = conn.api_key_configured ? 'Configurada' : 'No configurada';
+            keyEl.style.color = conn.api_key_configured ? '#6CA8A4' : '#ff6b6b';
+        }
+        if (keyMasked) keyMasked.textContent = conn.api_key_configured ? conn.api_key_masked : 'Falta APOLLO_API_KEY en .env';
+
+        // People endpoint
+        const pEl = document.getElementById('apollo-people-status');
+        const pDetail = document.getElementById('apollo-people-detail');
+        if (pEl) {
+            if (people.status === 'ok') {
+                pEl.textContent = `OK (${people.count})`;
+                pEl.style.color = '#6CA8A4';
+            } else {
+                pEl.textContent = `Error ${people.http_code || ''}`;
+                pEl.style.color = '#ff6b6b';
+            }
+        }
+        if (pDetail) pDetail.textContent = people.status === 'ok'
+            ? `${people.count} contactos · ${people.response_time_ms}ms`
+            : (people.error || 'Error desconocido');
+
+        // Emails endpoint
+        const eEl = document.getElementById('apollo-emails-status');
+        const eDetail = document.getElementById('apollo-emails-detail');
+        if (eEl) {
+            if (emails.status === 'ok') {
+                eEl.textContent = `OK (${emails.count})`;
+                eEl.style.color = '#6CA8A4';
+            } else {
+                eEl.textContent = `Error ${emails.http_code || ''}`;
+                eEl.style.color = '#ff6b6b';
+            }
+        }
+        if (eDetail) eDetail.textContent = emails.status === 'ok'
+            ? `${emails.count} emails · ${emails.response_time_ms}ms`
+            : (emails.error || 'Error desconocido');
+
+        // Endpoint details
+        function renderDetail(ep) {
+            let html = `<p style="color:rgba(255,255,255,0.6); font-size:0.8rem; margin-bottom:0.5rem;">
+                <strong>HTTP:</strong> ${ep.http_code || 'N/A'} &nbsp;|&nbsp;
+                <strong>Tiempo:</strong> ${ep.response_time_ms}ms &nbsp;|&nbsp;
+                <strong>Registros:</strong> ${ep.count}</p>`;
+            if (ep.error) {
+                html += `<p style="color:#ff6b6b; font-size:0.8rem; word-break:break-all;">${ep.error}</p>`;
+            }
+            if (ep.error_body) {
+                html += `<pre style="color:#ff6b6b; font-size:0.7rem; margin-top:0.5rem; white-space:pre-wrap;">${ep.error_body}</pre>`;
+            }
+            return html;
+        }
+        const pDetails = document.getElementById('apollo-people-details');
+        if (pDetails) pDetails.innerHTML = renderDetail(people);
+        const eDetails = document.getElementById('apollo-emails-details');
+        if (eDetails) eDetails.innerHTML = renderDetail(emails);
+
+        // Raw JSON preview
+        const rawEl = document.getElementById('apollo-raw-json');
+        if (rawEl) {
+            const preview = {
+                people_sample: people.data.slice(0, 2),
+                emails_sample: emails.data.slice(0, 2)
+            };
+            rawEl.textContent = JSON.stringify(preview, null, 2);
+        }
+    }
+
+    function updateApolloContacts(people) {
+        const tbody = document.getElementById('apollo-contacts-table');
+        const countEl = document.getElementById('apollo-contacts-count');
+        if (countEl) countEl.textContent = people.count || 0;
+
+        if (!tbody) return;
+        if (!people.data || people.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:rgba(255,255,255,0.5);">
+                ${people.error ? 'Error: ' + people.error : 'Sin contactos'}</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = people.data.map(p => {
+            const name = p.name || p.first_name && p.last_name ? (p.first_name + ' ' + (p.last_name || '')) : '-';
+            const title = p.title || '-';
+            const company = (p.organization && p.organization.name) || p.organization_name || '-';
+            const industry = (p.organization && p.organization.industry) || '-';
+            const country = p.country || '-';
+            const email = p.email || '-';
+            const linkedin = p.linkedin_url
+                ? `<a href="${p.linkedin_url}" target="_blank" style="color:#6CA8A4;">Ver</a>`
+                : '-';
+            return `<tr>
+                <td>${name}</td>
+                <td>${title}</td>
+                <td>${company}</td>
+                <td>${industry}</td>
+                <td>${country}</td>
+                <td style="font-size:0.8rem;">${email}</td>
+                <td>${linkedin}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function updateApolloEmails(emails) {
+        const tbody = document.getElementById('apollo-emails-table');
+        const countEl = document.getElementById('apollo-emails-count');
+        if (countEl) countEl.textContent = emails.count || 0;
+
+        if (!tbody) return;
+        if (!emails.data || emails.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.5);">
+                ${emails.error ? 'Error: ' + emails.error : 'Sin emails'}</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = emails.data.map(m => {
+            const date = m.created_at ? new Date(m.created_at).toLocaleDateString('es-ES') : '-';
+            const recipient = m.to_name || (m.contact && m.contact.name) || m.to || '-';
+            const subject = m.subject || '-';
+            const replied = m.is_replied;
+            const status = replied ? '<span style="color:#6CA8A4;">Respondido</span>' : '<span style="color:rgba(255,255,255,0.5);">Pendiente</span>';
+            const repliedAt = m.replied_at ? new Date(m.replied_at).toLocaleDateString('es-ES') : '-';
+            return `<tr>
+                <td>${date}</td>
+                <td>${recipient}</td>
+                <td>${subject}</td>
+                <td>${status}</td>
+                <td>${repliedAt}</td>
+            </tr>`;
+        }).join('');
+    }
+
     // ===== DIANA PAGE =====
     async function loadDianaData() {
         console.log('[DIANA] Cargando datos de Diana...');

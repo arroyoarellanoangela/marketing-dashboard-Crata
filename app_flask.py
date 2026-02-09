@@ -480,6 +480,16 @@ def diana():
                           user_email=session.get('user_email'),
                           user_name=session.get('user_name'))
 
+@app.route('/apollo')
+@login_required
+def apollo_page():
+    """Apollo - Datos crudos de Apollo.io API"""
+    return render_template('dashboard.html',
+                          active_page='apollo',
+                          page_title='Apollo',
+                          user_email=session.get('user_email'),
+                          user_name=session.get('user_name'))
+
 @app.route('/leads')
 @login_required
 def leads():
@@ -2993,12 +3003,14 @@ def debug_data_status():
 
 def _apollo_headers():
     """Returns headers for Apollo API requests."""
-    api_key = DIANA_CONFIG.get('api_key') or os.getenv('APOLLO_API_KEY', '')
     return {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
-        'X-Api-Key': api_key
     }
+
+def _apollo_api_key():
+    """Returns the Apollo API key."""
+    return DIANA_CONFIG.get('api_key') or os.getenv('APOLLO_API_KEY', '')
 
 def get_apollo_emails(fecha_inicio, fecha_fin):
     """Fetches email messages from Apollo emailer_messages/search API.
@@ -3012,6 +3024,7 @@ def get_apollo_emails(fecha_inicio, fecha_fin):
 
     while True:
         payload = {
+            'api_key': _apollo_api_key(),
             'page': page,
             'per_page': 100
         }
@@ -3043,14 +3056,15 @@ def get_apollo_emails(fecha_inicio, fecha_fin):
     return all_messages, None
 
 def get_apollo_contacts():
-    """Fetches contacts/leads from Apollo mixed_people/search API.
+    """Fetches contacts/leads from Apollo mixed_people/api_search API.
     Returns (contacts_list, error_string_or_None).
     """
     api_url = DIANA_CONFIG.get('api_url', 'https://api.apollo.io/api/v1')
-    url = f"{api_url}/mixed_people/search"
+    url = f"{api_url}/mixed_people/api_search"
     timeout = DIANA_CONFIG.get('timeout', 30)
 
     payload = {
+        'api_key': _apollo_api_key(),
         'page': 1,
         'per_page': 50
     }
@@ -3335,6 +3349,99 @@ def get_diana_data():
             'targets_summary': {'top_3': [], 'stats': {}},
             'manual_meetings': []
         }), 500
+
+# =============================================================================
+# API: APOLLO - RAW DATA ENDPOINT
+# =============================================================================
+
+@app.route('/api/get-apollo-data', methods=['POST'])
+def get_apollo_data():
+    """Fetches raw data from Apollo.io API for debugging and display."""
+    import time as _time
+
+    api_key = _apollo_api_key()
+    api_url = DIANA_CONFIG.get('api_url', 'https://api.apollo.io/api/v1')
+    timeout = DIANA_CONFIG.get('timeout', 30)
+
+    # Mask the key for display
+    if api_key and len(api_key) > 8:
+        masked = api_key[:4] + '...' + api_key[-3:]
+    elif api_key:
+        masked = '***'
+    else:
+        masked = ''
+
+    connection = {
+        'api_key_configured': bool(api_key),
+        'api_key_masked': masked,
+        'api_url': api_url
+    }
+
+    # --- People endpoint ---
+    people_result = {'status': 'error', 'http_code': None, 'response_time_ms': 0, 'count': 0, 'error': None, 'data': []}
+    if api_key:
+        try:
+            t0 = _time.time()
+            resp = requests.post(
+                f"{api_url}/mixed_people/api_search",
+                json={'api_key': api_key, 'page': 1, 'per_page': 50},
+                headers=_apollo_headers(),
+                timeout=timeout
+            )
+            elapsed = int((_time.time() - t0) * 1000)
+            people_result['http_code'] = resp.status_code
+            people_result['response_time_ms'] = elapsed
+            resp.raise_for_status()
+            body = resp.json()
+            people_result['data'] = body.get('people', [])
+            people_result['count'] = len(people_result['data'])
+            people_result['status'] = 'ok'
+        except requests.exceptions.RequestException as e:
+            people_result['error'] = str(e)
+            # Try to get response body for debugging
+            try:
+                people_result['error_body'] = resp.text[:500]
+            except Exception:
+                pass
+    else:
+        people_result['error'] = 'API key not configured'
+
+    # --- Emails endpoint ---
+    emails_result = {'status': 'error', 'http_code': None, 'response_time_ms': 0, 'count': 0, 'error': None, 'data': []}
+    if api_key:
+        try:
+            t0 = _time.time()
+            resp = requests.post(
+                f"{api_url}/emailer_messages/search",
+                json={'api_key': api_key, 'page': 1, 'per_page': 50},
+                headers=_apollo_headers(),
+                timeout=timeout
+            )
+            elapsed = int((_time.time() - t0) * 1000)
+            emails_result['http_code'] = resp.status_code
+            emails_result['response_time_ms'] = elapsed
+            resp.raise_for_status()
+            body = resp.json()
+            emails_result['data'] = body.get('emailer_messages', [])
+            emails_result['count'] = len(emails_result['data'])
+            emails_result['status'] = 'ok'
+        except requests.exceptions.RequestException as e:
+            emails_result['error'] = str(e)
+            try:
+                emails_result['error_body'] = resp.text[:500]
+            except Exception:
+                pass
+    else:
+        emails_result['error'] = 'API key not configured'
+
+    return jsonify({
+        'success': True,
+        'connection': connection,
+        'endpoints': {
+            'people': people_result,
+            'emails': emails_result
+        }
+    })
 
 # =============================================================================
 # API: DIANA - REUNIONES MANUALES
