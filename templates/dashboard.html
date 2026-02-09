@@ -6067,20 +6067,25 @@
     async function loadDataFromGA4() {
         const btn = document.getElementById('loadDataBtn');
         const status = document.getElementById('loadingStatus');
-        
+
         btn.disabled = true;
         btn.innerHTML = '⏳ Cargando datos...';
         status.textContent = 'Conectando con Google Analytics 4... Esto puede tardar 1-2 minutos.';
-        
+
         try {
             const response = await fetch('/api/load-data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
             });
-            
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error(`El servidor respondió con ${response.status} (${response.statusText}). Posible timeout - intentá de nuevo.`);
+            }
+
             const result = await response.json();
-            
+
             if (result.success) {
                 status.style.color = '#6ca8a4';
                 status.textContent = '✅ Datos cargados correctamente. Recargando dashboard...';
