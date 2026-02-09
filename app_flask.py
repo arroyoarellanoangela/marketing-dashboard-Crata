@@ -561,40 +561,48 @@ def df_to_json_safe(df):
 
 
 _loading_in_progress = False
+_loading_error = None
 
 @app.route('/api/check-data', methods=['GET'])
 def check_data():
     """Verifica si los datos ya están cargados. Si no hay datos, dispara la carga."""
-    global analytics_data, _loading_in_progress
+    global analytics_data, _loading_in_progress, _loading_error
 
     # Si no hay datos en memoria, intentar cargar desde disco
     if not analytics_data or 'datos_temporales' not in analytics_data:
-        print("[CHECK] No hay datos en memoria, intentando cargar desde disco...")
         load_data_from_disk()
 
     if analytics_data and 'datos_temporales' in analytics_data:
         df = analytics_data.get('datos_temporales')
         if df is not None and isinstance(df, pd.DataFrame) and not df.empty:
-            print(f"[CHECK] Datos disponibles: {len(df)} registros")
+            _loading_error = None
             return jsonify({
                 'loaded': True,
                 'records': len(df)
             })
 
+    # Si hubo un error previo, informar al frontend
+    if _loading_error and not _loading_in_progress:
+        return jsonify({'loaded': False, 'records': 0, 'error': _loading_error})
+
     # No hay datos ni en memoria ni en disco: disparar carga en background
     if not _loading_in_progress:
         _loading_in_progress = True
+        _loading_error = None
         print("[CHECK] No hay datos, lanzando carga de GA4 en background...")
         def _bg_load():
-            global _loading_in_progress
+            global _loading_in_progress, _loading_error
             try:
-                reload_analytics_data()
+                success = reload_analytics_data()
+                if not success:
+                    _loading_error = 'No se pudieron obtener datos de GA4. Verifica las credenciales.'
+            except Exception as e:
+                _loading_error = str(e)
             finally:
                 _loading_in_progress = False
         threading.Thread(target=_bg_load, daemon=True).start()
 
-    print("[CHECK] No hay datos disponibles (carga en progreso)")
-    return jsonify({'loaded': False, 'records': 0})
+    return jsonify({'loaded': False, 'records': 0, 'loading': True})
 
 @app.route('/api/get-filter-options', methods=['GET'])
 def get_filter_options():

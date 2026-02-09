@@ -5813,6 +5813,11 @@
         try {
             const response = await fetch('/api/check-data');
             const result = await response.json();
+            if (result.error) {
+                window._ga4LoadError = result.error;
+            } else {
+                window._ga4LoadError = null;
+            }
             return result.loaded;
         } catch (error) {
             console.error('Error checking data:', error);
@@ -5877,13 +5882,11 @@
         let attempts = 0;
         const interval = setInterval(async () => {
             attempts++;
-            // Progress bar sube rápido al principio, luego se frena (nunca pasa del 95%)
             const pct = Math.min(Math.round((1 - Math.exp(-attempts / 10)) * 100), 95);
             const bar = document.getElementById('ga4ProgressBar');
             const txt = document.getElementById('ga4ProgressText');
             if (bar) bar.style.width = pct + '%';
             if (txt) txt.textContent = 'Verificando datos... (' + (attempts * 10) + 's)';
-            console.log('[LOAD] Reintento ' + attempts + '...');
             try {
                 const loaded = await checkDataLoaded();
                 if (loaded) {
@@ -5897,8 +5900,11 @@
                     const { startDate, endDate } = getDateRange();
                     await loadKPIs(startDate, endDate);
                     showLoading(false);
+                } else if (window._ga4LoadError) {
+                    clearInterval(interval);
+                    if (bar) { bar.style.width = '100%'; bar.style.background = '#ff6b6b'; }
+                    if (txt) { txt.style.color = '#ff6b6b'; txt.textContent = 'Error: ' + window._ga4LoadError; }
                 }
-                // Never gives up - keeps retrying every 10s until data arrives
             } catch (e) {
                 console.error('[LOAD] Error en reintento:', e);
             }
