@@ -5875,7 +5875,7 @@
 
     function retryCheckData() {
         let attempts = 0;
-        const maxAttempts = 18; // 3 minutos (18 x 10s)
+        const maxAttempts = 30; // 5 minutos (30 x 10s)
         const interval = setInterval(async () => {
             attempts++;
             const pct = Math.min(Math.round((attempts / maxAttempts) * 100), 99);
