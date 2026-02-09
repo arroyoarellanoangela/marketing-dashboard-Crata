@@ -4103,11 +4103,11 @@ def reload_analytics_data():
         return False
 
 def auto_reload_worker():
-    """Worker thread que recarga datos cada 10 minutos"""
+    """Worker thread que recarga datos cada 15 minutos"""
     while True:
         try:
-            # Esperar 10 minutos (600 segundos)
-            time.sleep(600)
+            # Esperar 15 minutos (900 segundos)
+            time.sleep(900)
             # Recargar datos
             reload_analytics_data()
         except Exception as e:
@@ -4131,11 +4131,12 @@ init_analytics()
 if load_data_from_disk():
     print("[OK] Datos restaurados desde cache")
 else:
-    print("[INFO] No hay datos en cache, carga desde 'Getting Started'")
+    print("[INFO] No hay datos en cache, cargando desde GA4 automáticamente...")
+    reload_analytics_data()
 
 reload_thread = threading.Thread(target=auto_reload_worker, daemon=True)
 reload_thread.start()
-print("[AUTO-RELOAD] Hilo de recarga automática iniciado (cada 10 minutos)")
+print("[AUTO-RELOAD] Hilo de recarga automática iniciado (cada 15 minutos)")
 
 if __name__ == '__main__':
     print("="*60)

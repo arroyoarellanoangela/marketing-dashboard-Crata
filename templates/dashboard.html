@@ -5839,8 +5839,11 @@
             console.log('[LOAD] Datos cargados:', dataLoaded);
 
             if (!dataLoaded) {
-                // Mostrar mensaje y redirigir al inicio para cargar datos
-                showNoDataMessage();
+                // Los datos se cargan automáticamente en el servidor al arrancar.
+                // Reintentar cada 10 segundos hasta que estén listos.
+                console.log('[LOAD] Datos no disponibles aún, esperando carga automática...');
+                showLoadingMessage('Los datos de GA4 se están cargando automáticamente. Esto puede tardar 1-2 minutos...');
+                retryCheckData();
                 return;
             }
 
@@ -5853,6 +5856,43 @@
         } finally {
             showLoading(false);
         }
+    }
+
+    function showLoadingMessage(msg) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (!overlay) return;
+        overlay.innerHTML = `
+            <div style="text-align: center; max-width: 450px; padding: 2rem;">
+                <div style="margin: 0 auto 1.5rem; width: 40px; height: 40px; border: 3px solid rgba(108,168,164,0.3); border-top-color: #6CA8A4; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <p style="font-family: 'Outfit', sans-serif; color: rgba(255,255,255,0.7); font-size: 0.95rem;">${msg}</p>
+            </div>
+        `;
+        overlay.classList.add('active');
+    }
+
+    function retryCheckData() {
+        let attempts = 0;
+        const maxAttempts = 18; // 3 minutos (18 x 10s)
+        const interval = setInterval(async () => {
+            attempts++;
+            console.log('[LOAD] Reintento ' + attempts + '/' + maxAttempts + '...');
+            try {
+                const loaded = await checkDataLoaded();
+                if (loaded) {
+                    clearInterval(interval);
+                    const overlay = document.getElementById('loadingOverlay');
+                    if (overlay) overlay.classList.remove('active');
+                    const { startDate, endDate } = getDateRange();
+                    await loadKPIs(startDate, endDate);
+                    showLoading(false);
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    showLoadingMessage('Los datos aún no están listos. Recargá la página en unos minutos.');
+                }
+            } catch (e) {
+                console.error('[LOAD] Error en reintento:', e);
+            }
+        }, 10000);
     }
     
     // Load KPIs
@@ -6022,89 +6062,8 @@
         }
     }
     
-    // Mostrar mensaje cuando no hay datos cargados
-    function showNoDataMessage() {
-        // Ocultar los spinners ligeros
-        document.getElementById('quickSpinner')?.classList.remove('active');
-        document.getElementById('refreshIndicator')?.classList.remove('active');
-        document.getElementById('pageProgress')?.classList.remove('active');
-        document.querySelector('.main-content')?.classList.remove('loading');
-        
-        // Mostrar el overlay completo con mensaje
-        const overlay = document.getElementById('loadingOverlay');
-        overlay.classList.add('active');
-        overlay.innerHTML = `
-            <div style="text-align: center; max-width: 450px; padding: 2rem;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">📊</div>
-                <h2 style="font-family: 'Space Grotesk', sans-serif; color: #fff; margin-bottom: 1rem;">
-                    Datos no cargados
-                </h2>
-                <p style="font-family: 'Outfit', sans-serif; color: rgba(255,255,255,0.7); margin-bottom: 2rem;">
-                    Los datos de Google Analytics no están cargados. Haz clic en el botón para cargarlos.
-                </p>
-                <button onclick="loadDataFromGA4()" id="loadDataBtn" style="
-                    display: inline-block;
-                    padding: 1rem 2rem;
-                    background: linear-gradient(135deg, rgba(29, 71, 68, 0.9) 0%, rgba(98, 169, 167, 0.9) 100%);
-                    border: 2px solid rgba(108, 168, 164, 0.5);
-                    border-radius: 50px;
-                    color: #fff;
-                    font-family: 'Outfit', sans-serif;
-                    font-weight: 600;
-                    font-size: 1rem;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                ">
-                    🚀 Cargar Datos de GA4
-                </button>
-                <p id="loadingStatus" style="font-family: 'Outfit', sans-serif; color: rgba(255,255,255,0.5); margin-top: 1.5rem; font-size: 0.9rem;"></p>
-            </div>
-        `;
-        overlay.classList.add('active');
-    }
-    
-    // Función para cargar datos desde GA4
-    async function loadDataFromGA4() {
-        const btn = document.getElementById('loadDataBtn');
-        const status = document.getElementById('loadingStatus');
-
-        btn.disabled = true;
-        btn.innerHTML = '⏳ Cargando datos...';
-        status.textContent = 'Conectando con Google Analytics 4... Esto puede tardar 1-2 minutos.';
-
-        try {
-            const response = await fetch('/api/load-data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            });
-
-            const contentType = response.headers.get('content-type') || '';
-            if (!contentType.includes('application/json')) {
-                throw new Error(`El servidor respondió con ${response.status} (${response.statusText}). Posible timeout - intentá de nuevo.`);
-            }
-
-            const result = await response.json();
-
-            if (result.success) {
-                status.style.color = '#6ca8a4';
-                status.textContent = '✅ Datos cargados correctamente. Recargando dashboard...';
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else {
-                status.style.color = '#ff6b6b';
-                status.textContent = '❌ Error: ' + (result.error || 'No se pudieron cargar los datos');
-                btn.disabled = false;
-                btn.innerHTML = '🔄 Reintentar';
-            }
-        } catch (error) {
-            status.style.color = '#ff6b6b';
-            status.textContent = '❌ Error de conexión: ' + error.message;
-            btn.disabled = false;
-            btn.innerHTML = '🔄 Reintentar';
-        }
-    }
+    // showNoDataMessage y loadDataFromGA4 eliminados.
+    // Los datos se cargan automáticamente al arrancar el servidor y cada 15 min.
     
     // ===== GRÁFICO DE COMPARACIÓN =====
     let comparisonChartData = null;
