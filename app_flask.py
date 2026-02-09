@@ -560,16 +560,18 @@ def df_to_json_safe(df):
     return df_copy.to_dict(orient='records')
 
 
+_loading_in_progress = False
+
 @app.route('/api/check-data', methods=['GET'])
 def check_data():
-    """Verifica si los datos ya están cargados"""
-    global analytics_data
-    
+    """Verifica si los datos ya están cargados. Si no hay datos, dispara la carga."""
+    global analytics_data, _loading_in_progress
+
     # Si no hay datos en memoria, intentar cargar desde disco
     if not analytics_data or 'datos_temporales' not in analytics_data:
         print("[CHECK] No hay datos en memoria, intentando cargar desde disco...")
         load_data_from_disk()
-    
+
     if analytics_data and 'datos_temporales' in analytics_data:
         df = analytics_data.get('datos_temporales')
         if df is not None and isinstance(df, pd.DataFrame) and not df.empty:
@@ -578,8 +580,20 @@ def check_data():
                 'loaded': True,
                 'records': len(df)
             })
-    
-    print("[CHECK] No hay datos disponibles")
+
+    # No hay datos ni en memoria ni en disco: disparar carga en background
+    if not _loading_in_progress:
+        _loading_in_progress = True
+        print("[CHECK] No hay datos, lanzando carga de GA4 en background...")
+        def _bg_load():
+            global _loading_in_progress
+            try:
+                reload_analytics_data()
+            finally:
+                _loading_in_progress = False
+        threading.Thread(target=_bg_load, daemon=True).start()
+
+    print("[CHECK] No hay datos disponibles (carga en progreso)")
     return jsonify({'loaded': False, 'records': 0})
 
 @app.route('/api/get-filter-options', methods=['GET'])
