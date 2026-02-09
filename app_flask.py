@@ -4153,9 +4153,7 @@ init_analytics()
 if load_data_from_disk():
     print("[OK] Datos restaurados desde cache")
 else:
-    print("[INFO] No hay datos en cache, lanzando carga en background...")
-    startup_thread = threading.Thread(target=reload_analytics_data, daemon=True)
-    startup_thread.start()
+    print("[INFO] No hay datos en cache, se cargarán al primer request via /api/check-data")
 
 reload_thread = threading.Thread(target=auto_reload_worker, daemon=True)
 reload_thread.start()
